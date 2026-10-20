@@ -9,11 +9,14 @@ function setView(v) {
         num("lessonBatch", "Lesson batch size", 1, 20, "How many new cards are taught before their quiz.") +
         '<div class="opts"><label><input type="checkbox" id="shuffle"' + (s.shuffle ? " checked" : "") + '> Shuffle review order (otherwise oldest due first)</label></div>' +
         '<label for="dupScope">Duplicate check</label><select id="dupScope"><option value="deck"' + (s.dupScope === "deck" ? " selected" : "") + '>Compare with cards in the same deck</option><option value="all"' + (s.dupScope === "all" ? " selected" : "") + '>Compare with cards in every deck</option></select><p class="hint" style="margin:4px 0 0">Cards with the same prompt (and picture or audio) count as duplicates when you create or import.</p><p class="hint" id="msg" role="status"></p></div>' +
+        '<div class="panel"><h2>AI question writing</h2><label for="aiKey">Anthropic API key</label><input type="password" id="aiKey" autocomplete="off" spellcheck="false" value="' + esc(s.aiKey || "") + '"><p class="hint" style="margin:4px 0 0">Only needed when Recall is not running inside Claude. The key stays in this browser, is never included in exports, and is sent only to Anthropic. Don\'t enter it on a shared computer.</p><label for="aiModel">Model</label><input type="text" id="aiModel" value="' + esc(s.aiModel || "") + '"><p class="hint" style="margin:4px 0 0">Leave as is unless the AI service reports an unknown model.</p></div>' +
         '<div class="panel"><h2>Dashboard and progress</h2><div class="row" style="margin:0"><button id="rw">Restore default widgets</button><button id="rt">Reset today\'s counters</button></div></div>';
     [["newPerDay", 0, 500], ["maxReviews", 0, 2000], ["lessonBatch", 1, 20]].forEach(function (f) { $("#" + f[0]).onchange = function () { var n = Math.round(+this.value); if (isNaN(n)) n = DEFAULTS[f[0]]; n = Math.max(f[1], Math.min(f[2], n)); this.value = n; s[f[0]] = n; save(); shell(); say("Saved.") } });
     $("#learnSteps").onchange = function () { s.learnSteps = +this.value; save(); say("Saved.") };
     $("#shuffle").onchange = function () { s.shuffle = this.checked; save(); say("Saved.") };
     $("#dupScope").onchange = function () { s.dupScope = this.value; save(); say("Saved.") };
+    $("#aiKey").onchange = function () { s.aiKey = this.value.trim(); save(); say("Saved.") };
+    $("#aiModel").onchange = function () { s.aiModel = this.value.trim() || DEFAULTS.aiModel; this.value = s.aiModel; save(); say("Saved.") };
     $("#rw").onclick = function () { DB.widgets = null; normWidgets(); save(); say("Dashboard widgets restored.") };
     $("#rt").onclick = function () { delete DB.log[today()]; save(); shell(); say("Today's counters were reset.") }
 }

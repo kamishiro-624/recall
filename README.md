@@ -2,11 +2,12 @@
 
 Recall turns slide decks and notes into study cards, then schedules reviews with spaced repetition so you practice remembering instead of rereading.
 
-Built for the TSA Software Development event. Everything runs in the browser. There is no server, no account, and no file ever leaves the device.
+Built for the TSA Software Development event. Everything runs in the browser. There is no server and no account. Files stay on the device unless you use the optional AI question writing, which sends the slide text (only the text) to Anthropic.
 
 ## Features
 
 - **Cards from slide decks and documents.** Upload a `.pptx` or `.docx`. Recall reads slide text, tables, speaker notes and pictures, then proposes cards you review before adding.
+- **AI-written questions (optional).** Instead of copying slide text, an AI model writes why/how, compare, connect, predict and apply questions with short model answers, and flags slide mistakes for you to check. Needs an Anthropic API key in Settings (not needed inside Claude). Everything is reviewed before it is added.
 - **Dashboard with modular widgets.** Reviews, lessons, daily progress, progress by stage, a 7-day review forecast, streak and accuracy, a 28-day activity map, decks, trouble spots and quick actions. Show, hide and reorder them with *Customize*.
 - **Learning stage and daily limits.** New cards are taught in lessons (in small batches), then quizzed until you answer correctly a set number of times before they join reviews. Settings control new cards per day, maximum reviews per day, learning steps, lesson batch size and shuffle.
 - **Duplicate detection** when creating and importing (same prompt, same picture or audio), within a deck or across all decks, plus one-click cleanup in the Library.
@@ -47,6 +48,7 @@ js/study.js           reviews, lessons (learning stage), practice, scheduling
 js/settings.js        daily limits, learning steps, duplicate scope
 js/create.js          create and edit cards, image and audio capture
 js/parsers.js         pptx, docx, csv/tsv, txt/md and json parsers; card generation
+js/ai.js              optional AI question writing (Anthropic API from the browser)
 js/import-view.js     import screen and the review-before-add list
 js/library.js         library, search, progress boxes and all exports
 js/app.js             boot
@@ -57,6 +59,8 @@ tools/bundle.py       builds a single-file version: python3 tools/bundle.py > re
 Scripts are plain files loaded in order (no bundler, no modules) so the app also works when opened straight from disk.
 
 ## How card generation works
+
+Two ways. The AI option (above) writes concept questions. The built-in rules below need no account and no internet:
 
 Slides and document sections are turned into cards by simple rules, not by an AI model:
 
@@ -77,7 +81,7 @@ Because the rules are heuristic, every generated card is shown for review first.
 
 ## Ideas for next steps
 
-Shared class decks and a teacher view, progress charts over time, PDF import, and optional AI-written cards.
+Shared class decks and a teacher view, progress charts over time, PDF import, and letting the AI see slide pictures and diagrams.
 
 ## License
 

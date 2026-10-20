@@ -1,6 +1,6 @@
 /* Core: state, helpers, storage (IndexedDB), card model, scheduling helpers, duplicate detection */
 var DAY = 864e5, HOUR = 36e5, GAPS = [0, 1, 3, 7, 14];
-var DEFAULTS = { newPerDay: 10, maxReviews: 100, learnSteps: 2, lessonBatch: 5, shuffle: true, dupScope: "deck" };
+var DEFAULTS = { newPerDay: 10, maxReviews: 100, learnSteps: 2, lessonBatch: 5, shuffle: true, dupScope: "deck", aiKey: "", aiModel: "claude-sonnet-5-5" };
 var DB = { decks: [], cards: [], cur: "all", settings: {}, log: {}, widgets: null }, tab = "dash", sess = null, form = blank(), editDash = false, imp = { direct: [], secs: [], items: [], deck: "", msg: "" };
 var CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/g;
 function $(s, r) { return (r || document).querySelector(s) }
