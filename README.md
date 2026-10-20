@@ -2,12 +2,12 @@
 
 Recall turns slide decks and notes into study cards, then schedules reviews with spaced repetition so you practice remembering instead of rereading.
 
-Built for the TSA Software Development event. Everything runs in the browser. There is no server and no account. Files stay on the device unless you use the optional AI question writing, which sends the slide text (only the text) to Anthropic.
+Built for the TSA Software Development event. Everything runs in the browser. There is no server and no account. Files stay on the device unless you choose a cloud provider for the optional AI question writing, which sends the slide text (only the text) to that provider.
 
 ## Features
 
 - **Cards from slide decks and documents.** Upload a `.pptx` or `.docx`. Recall reads slide text, tables, speaker notes and pictures, then proposes cards you review before adding.
-- **AI-written questions (optional).** Instead of copying slide text, an AI model writes why/how, compare, connect, predict and apply questions with short model answers, and flags slide mistakes for you to check. Needs an Anthropic API key in Settings (not needed inside Claude). Everything is reviewed before it is added.
+- **AI-written questions (optional).** Instead of copying slide text, an AI model writes why/how, compare, connect, predict and apply questions with short model answers, and flags slide mistakes for you to check. Pick the provider in Settings: Chrome's built-in on-device AI (free, no key, nothing leaves the device, desktop Chrome only, simpler questions), Google Gemini with a free AI Studio key (best free quality), or Claude with an Anthropic API key (no key needed inside Claude). Everything is reviewed before it is added.
 - **Dashboard with modular widgets.** Reviews, lessons, daily progress, progress by stage, a 7-day review forecast, streak and accuracy, a 28-day activity map, decks, trouble spots and quick actions. Show, hide and reorder them with *Customize*.
 - **Learning stage and daily limits.** New cards are taught in lessons (in small batches), then quizzed until you answer correctly a set number of times before they join reviews. Settings control new cards per day, maximum reviews per day, learning steps, lesson batch size and shuffle.
 - **Duplicate detection** when creating and importing (same prompt, same picture or audio), within a deck or across all decks, plus one-click cleanup in the Library.
@@ -27,7 +27,7 @@ python3 -m http.server 8000
 # then visit http://localhost:8000
 ```
 
-An internet connection is needed once per load for the JSZip library and Google Fonts (both from CDNs).
+An internet connection is needed once per load for the JSZip library and Google Fonts (both from CDNs), and whenever you use a cloud AI provider.
 
 ## Deploy on GitHub Pages
 
@@ -40,6 +40,7 @@ An internet connection is needed once per load for the JSZip library and Google 
 ```
 index.html            page shell, loads the scripts in order
 css/styles.css        theme tokens (light and dark) and layout
+css/forms.css         styling for inputs, drop-downs, text areas, file pickers and checkboxes
 js/core.js            state, helpers, IndexedDB storage, card model, duplicate keys
 js/download.js        file saving (browser download, or Claude artifact downloads)
 js/shell.js           deck selector, tabs, router
@@ -48,7 +49,7 @@ js/study.js           reviews, lessons (learning stage), practice, scheduling
 js/settings.js        daily limits, learning steps, duplicate scope
 js/create.js          create and edit cards, image and audio capture
 js/parsers.js         pptx, docx, csv/tsv, txt/md and json parsers; card generation
-js/ai.js              optional AI question writing (Anthropic API from the browser)
+js/ai.js              optional AI question writing: Chrome built-in, Gemini and Claude providers
 js/import-view.js     import screen and the review-before-add list
 js/library.js         library, search, progress boxes and all exports
 js/app.js             boot

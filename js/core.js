@@ -1,6 +1,6 @@
 /* Core: state, helpers, storage (IndexedDB), card model, scheduling helpers, duplicate detection */
 var DAY = 864e5, HOUR = 36e5, GAPS = [0, 1, 3, 7, 14];
-var DEFAULTS = { newPerDay: 10, maxReviews: 100, learnSteps: 2, lessonBatch: 5, shuffle: true, dupScope: "deck", aiKey: "", aiModel: "claude-sonnet-5-5" };
+var DEFAULTS = { newPerDay: 10, maxReviews: 100, learnSteps: 2, lessonBatch: 5, shuffle: true, dupScope: "deck", aiProvider: "chrome", aiKey: "", aiModel: "claude-sonnet-5-5", gemKey: "", gemModel: "gemini-2.5-flash" };
 var DB = { decks: [], cards: [], cur: "all", settings: {}, log: {}, widgets: null }, tab = "dash", sess = null, form = blank(), editDash = false, imp = { direct: [], secs: [], items: [], deck: "", msg: "" };
 var CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/g;
 function $(s, r) { return (r || document).querySelector(s) }
@@ -14,7 +14,7 @@ function idb() { return new Promise(function (res, rej) { var r = indexedDB.open
 async function loadDB() { try { var d = await idb(); var v = await new Promise(function (res) { var q = d.transaction("kv").objectStore("kv").get("db"); q.onsuccess = function () { res(q.result) }; q.onerror = function () { res(null) } }); if (v && v.cards) DB = v } catch (e) { } migrate() }
 var tmr; function save() { clearTimeout(tmr); tmr = setTimeout(async function () { try { var d = await idb(); d.transaction("kv", "readwrite").objectStore("kv").put(DB, "db") } catch (e) { } }, 250) }
 function migrate() {
-    DB.settings = Object.assign({}, DEFAULTS, DB.settings || {}); DB.log = DB.log || {}; DB.decks = DB.decks || []; if (!DB.cur) DB.cur = "all";
+    DB.settings = DB.settings || {}; if (DB.settings.aiKey && !DB.settings.aiProvider) DB.settings.aiProvider = "claude"; DB.settings = Object.assign({}, DEFAULTS, DB.settings); DB.log = DB.log || {}; DB.decks = DB.decks || []; if (!DB.cur) DB.cur = "all";
     DB.cards.forEach(function (c) { if (!c.stage) c.stage = "review"; c.miss = c.miss || 0; c.step = c.step || 0 }); normWidgets()
 }
 /* settings, daily log, stages */
