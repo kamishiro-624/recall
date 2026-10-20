@@ -9,7 +9,8 @@ function addView(v){
  '<label for="fi">Picture (optional)</label><input type="file" id="fi" accept="image/*">'+
  '<label for="fu">Audio (optional): upload or record</label><input type="file" id="fu" accept="audio/*"><div class="row"><button id="rec">Record audio</button><span class="hint" id="recs"></span></div><div id="pv">'+media(form)+'</div>'+
  '<div class="row"><button class="primary" id="sv">'+(form.id?"Save changes":"Add card")+'</button>'+(form.id?'<button id="cx">Cancel</button>':"")+'</div><p class="hint" id="msg" role="status"></p></div>';
- $("#fq").oninput=function(){form.q=this.value};$("#fa").oninput=function(){form.a=this.value};$("#fd").oninput=function(){form.deck=this.value};
+ function touched(){form.ok=false;var b=$("#sv");if(b)b.textContent=form.id?"Save changes":"Add card"}
+ $("#fq").oninput=function(){form.q=this.value;touched()};$("#fa").oninput=function(){form.a=this.value;touched()};$("#fd").oninput=function(){form.deck=this.value;touched()};
  $("#fi").onchange=async function(){if(this.files[0]){form.img=await readImg(this.files[0]);$("#pv").innerHTML=media(form)}};
  $("#fu").onchange=async function(){if(this.files[0]){form.aud=await readURL(this.files[0]);$("#pv").innerHTML=media(form)}};
  var mr=null;$("#rec").onclick=async function(){
@@ -20,7 +21,9 @@ function addView(v){
  $("#sv").onclick=function(){
   if(!form.q.trim()&&!form.img&&!form.aud){say("Add a prompt, picture or audio first.");return}
   if(!form.a.trim()&&kind(form)!=="fill-in"){say("Add an answer to check yourself against.");return}
+  var dup=findDup(form,deckId(form.deck||dn),form.id);
+  if(dup&&!form.ok){form.ok=true;$("#sv").textContent=form.id?"Save anyway":"Add anyway";say("This deck already has a card with the same prompt"+(dup.a.trim()!==form.a.trim()?" (its answer: \u201c"+dup.a.slice(0,60)+"\u201d)":"")+". Edit this one, or choose the button again to "+(form.id?"save":"add")+" it anyway.");return}
   var d=ensureDeck(form.deck||dn);
   if(form.id){var c=DB.cards.find(function(x){return x.id===form.id});if(c){c.q=form.q;c.a=form.a;c.img=form.img;c.aud=form.aud;c.deck=d}form=blank();tab="lib";save();render();return}
-  DB.cards.push(mk(form,d));save();form=blank();form.deck=deckName(d);say("Card added.");render();$("#msg").textContent="Card added."};
+  DB.cards.push(mk(form,d));save();form=blank();form.deck=deckName(d);render();say("Card added. New cards appear in your next lessons.")};
  if($("#cx"))$("#cx").onclick=function(){form=blank();tab="lib";render()}}

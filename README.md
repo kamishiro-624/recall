@@ -7,9 +7,12 @@ Built for the TSA Software Development event. Everything runs in the browser. Th
 ## Features
 
 - **Cards from slide decks and documents.** Upload a `.pptx` or `.docx`. Recall reads slide text, tables, speaker notes and pictures, then proposes cards you review before adding.
+- **Dashboard with modular widgets.** Reviews, lessons, daily progress, progress by stage, a 7-day review forecast, streak and accuracy, a 28-day activity map, decks, trouble spots and quick actions. Show, hide and reorder them with *Customize*.
+- **Learning stage and daily limits.** New cards are taught in lessons (in small batches), then quizzed until you answer correctly a set number of times before they join reviews. Settings control new cards per day, maximum reviews per day, learning steps, lesson batch size and shuffle.
+- **Duplicate detection** when creating and importing (same prompt, same picture or audio), within a deck or across all decks, plus one-click cleanup in the Library.
 - **Four card types.** Text, fill-in-the-blank (`{{c1::hidden words}}`), image and audio (upload or record).
 - **Active recall.** You type an answer before the answer is revealed, then rate yourself *Missed*, *Shaky* or *Got it* (keys 1, 2, 3).
-- **Spaced repetition.** A five-box Leitner schedule with review gaps of daily, 1, 3, 7 and 14 days.
+- **Spaced repetition.** A five-box Leitner schedule with review gaps of 1, 3, 7 and 14 days. Missed cards return in 15 minutes.
 - **Import:** `.pptx`, `.docx`, `.txt`, `.md`, `.csv`, `.tsv`, `.json`, pasted notes, Anki plain-text exports and Quizlet tab-separated paste.
 - **Export:** Recall JSON (keeps media), CSV, Anki `.txt`, Quizlet `.txt`, Markdown and a printable HTML study sheet.
 - Multiple decks, search, edit, light and dark themes, keyboard friendly, works on phones.
@@ -36,16 +39,19 @@ An internet connection is needed once per load for the JSZip library and Google 
 ```
 index.html            page shell, loads the scripts in order
 css/styles.css        theme tokens (light and dark) and layout
-js/core.js            state, helpers, IndexedDB storage, card model
+js/core.js            state, helpers, IndexedDB storage, card model, duplicate keys
 js/download.js        file saving (browser download, or Claude artifact downloads)
 js/shell.js           deck selector, tabs, router
-js/study.js           study sessions, grading, Leitner scheduling
+js/dashboard.js       widget definitions, layout, customize mode
+js/study.js           reviews, lessons (learning stage), practice, scheduling
+js/settings.js        daily limits, learning steps, duplicate scope
 js/create.js          create and edit cards, image and audio capture
 js/parsers.js         pptx, docx, csv/tsv, txt/md and json parsers; card generation
 js/import-view.js     import screen and the review-before-add list
 js/library.js         library, search, progress boxes and all exports
 js/app.js             boot
 sample/               files to try the importers with
+tools/bundle.py       builds a single-file version: python3 tools/bundle.py > recall.html
 ```
 
 Scripts are plain files loaded in order (no bundler, no modules) so the app also works when opened straight from disk.
