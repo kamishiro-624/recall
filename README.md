@@ -1,0 +1,78 @@
+# Recall
+
+Recall turns slide decks and notes into study cards, then schedules reviews with spaced repetition so you practice remembering instead of rereading.
+
+Built for the TSA Software Development event. Everything runs in the browser. There is no server, no account, and no file ever leaves the device.
+
+## Features
+
+- **Cards from slide decks and documents.** Upload a `.pptx` or `.docx`. Recall reads slide text, tables, speaker notes and pictures, then proposes cards you review before adding.
+- **Four card types.** Text, fill-in-the-blank (`{{c1::hidden words}}`), image and audio (upload or record).
+- **Active recall.** You type an answer before the answer is revealed, then rate yourself *Missed*, *Shaky* or *Got it* (keys 1, 2, 3).
+- **Spaced repetition.** A five-box Leitner schedule with review gaps of daily, 1, 3, 7 and 14 days.
+- **Import:** `.pptx`, `.docx`, `.txt`, `.md`, `.csv`, `.tsv`, `.json`, pasted notes, Anki plain-text exports and Quizlet tab-separated paste.
+- **Export:** Recall JSON (keeps media), CSV, Anki `.txt`, Quizlet `.txt`, Markdown and a printable HTML study sheet.
+- Multiple decks, search, edit, light and dark themes, keyboard friendly, works on phones.
+
+## Run locally
+
+No build step. Open `index.html` in a browser, or serve the folder:
+
+```bash
+python3 -m http.server 8000
+# then visit http://localhost:8000
+```
+
+An internet connection is needed once per load for the JSZip library and Google Fonts (both from CDNs).
+
+## Deploy on GitHub Pages
+
+1. Push this folder to a GitHub repository whose default branch is `main`.
+2. In the repository go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+3. Push to `main`. The workflow in `.github/workflows/pages.yml` publishes the site at `https://<user>.github.io/<repo>/`.
+
+## Project structure
+
+```
+index.html            page shell, loads the scripts in order
+css/styles.css        theme tokens (light and dark) and layout
+js/core.js            state, helpers, IndexedDB storage, card model
+js/download.js        file saving (browser download, or Claude artifact downloads)
+js/shell.js           deck selector, tabs, router
+js/study.js           study sessions, grading, Leitner scheduling
+js/create.js          create and edit cards, image and audio capture
+js/parsers.js         pptx, docx, csv/tsv, txt/md and json parsers; card generation
+js/import-view.js     import screen and the review-before-add list
+js/library.js         library, search, progress boxes and all exports
+js/app.js             boot
+sample/               files to try the importers with
+```
+
+Scripts are plain files loaded in order (no bundler, no modules) so the app also works when opened straight from disk.
+
+## How card generation works
+
+Slides and document sections are turned into cards by simple rules, not by an AI model:
+
+- A slide or heading with body text becomes a *key points* card.
+- A line like `Term: definition` (or with a dash) becomes a term card.
+- A sentence of six or more words gets its longest word hidden as a fill-in card (up to two per slide).
+- Slide pictures become image cards, answered with the slide title.
+
+Because the rules are heuristic, every generated card is shown for review first.
+
+## Known limits
+
+- Legacy `.ppt` and `.doc` files and PDFs can't be read. Save as `.pptx` or `.docx`, or paste the text.
+- Anki `.apkg` packages aren't supported. Use Anki's *Notes in Plain Text* export instead.
+- Anki and Quizlet exports carry card text only. Recall JSON keeps images and audio.
+- Data lives in the browser's IndexedDB on one device. Use Recall JSON export to back up or move decks.
+- Microphone recording depends on browser permission.
+
+## Ideas for next steps
+
+Shared class decks and a teacher view, progress charts over time, PDF import, and optional AI-written cards.
+
+## License
+
+MIT. Replace the name in `LICENSE` with yours.

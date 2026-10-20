@@ -1,0 +1,4 @@
+#separator:tab
+#html:true
+DNA	Molecule that carries genetic instructions
+Ribosome	Makes proteins<br>from amino acids
