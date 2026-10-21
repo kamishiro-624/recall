@@ -32,7 +32,7 @@ var AI_GEM_LIST = [];
 var AI_PROV = {
   chrome: {
     name: "Chrome built-in AI (on this device)", short: "Chrome's built-in AI. It runs on this device and nothing is sent anywhere", chunk: 5000, batch: 5, prior: 25, call: aiChromeCall,
-    notes: [["Cost", "Free. No account or key."], ["Privacy", "Runs on this device. Slide text never leaves it."], ["Needs", "Desktop Chrome on a computer that meets Google's requirements, plus a one-time download of the model (several GB). It won't work on phones, in other browsers, or on some school Chromebooks."], ["Quality", "A small model, so expect simpler questions and review every card. It writes a few at a time, so large sets are slow. Works best for English text."]]
+    notes: [["Cost", "Free. No account or key."], ["Privacy", "Runs on this device. Slide text never leaves it."], ["Needs", "Desktop Chrome with two flags switched on (Settings shows the steps if it's off), a computer that meets Google's requirements, and a one-time download of the model (several GB). For web pages this is still experimental, so it won't work on a stock Chrome, phones, other browsers, inside embedded pages, or on many school Chromebooks."], ["Quality", "A small model, so expect simpler questions and review every card. It writes a few at a time, so large sets are slow. Works best for English text."]]
   },
   gemini: {
     name: "Google Gemini (free key)", short: "Google Gemini. The slide text is sent to Google", chunk: 30000, batch: 10, prior: 80, call: aiGeminiCall,
@@ -98,7 +98,7 @@ async function aiGeminiCall(sys, user, o) {
   return t
 }
 async function aiChromeSession(system, status) {
-  if (typeof LanguageModel === "undefined") throw new Error("This browser doesn't have Chrome's built-in AI. Use desktop Chrome, or choose another AI provider in Settings.");
+  if (typeof LanguageModel === "undefined") throw new Error("Chrome's built-in AI isn't switched on for web pages yet. In Chrome, open chrome://flags/#prompt-api-for-gemini-nano, set it to Enabled, do the same for chrome://flags/#optimization-guide-on-device-model, then restart Chrome and try again." + (window.top !== window.self ? " Recall also seems to be running inside another page; Chrome blocks the AI there, so open Recall's own page (index.html) or choose another provider." : " Or choose Gemini or Claude in Settings."));
   var io = { expectedInputs: [{ type: "text", languages: ["en"] }], expectedOutputs: [{ type: "text", languages: ["en"] }] }, av;
   try { av = await LanguageModel.availability(io) } catch (e) { io = {}; av = await LanguageModel.availability() }
   if (av === "unavailable") throw new Error("Chrome's built-in AI isn't available on this device (it needs desktop Chrome and enough free disk space). Choose Gemini or Claude in Settings instead.");
