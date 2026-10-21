@@ -1,6 +1,6 @@
 /* Core: state, helpers, storage (IndexedDB), card model, scheduling helpers, duplicate detection */
 var DAY = 864e5, HOUR = 36e5, GAPS = [0, 1, 3, 7, 14];
-var DEFAULTS = { newPerDay: 10, maxReviews: 100, learnSteps: 2, lessonBatch: 5, shuffle: true, dupScope: "deck", aiProvider: "chrome", aiKey: "", aiModel: "claude-sonnet-5-5", gemKey: "", gemModel: "gemini-2.5-flash" };
+var DEFAULTS = { newPerDay: 10, maxReviews: 100, learnSteps: 2, lessonBatch: 5, shuffle: true, dupScope: "deck", aiProvider: "puter", puterModel: "", aiKey: "", aiModel: "claude-sonnet-5-5", gemKey: "", gemModel: "gemini-2.5-flash" };
 var DB = { decks: [], cards: [], cur: "all", settings: {}, log: {}, widgets: null }, tab = "dash", sess = null, form = blank(), editDash = false, imp = { direct: [], secs: [], items: [], deck: "", msg: "" };
 var CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/g;
 function $(s, r) { return (r || document).querySelector(s) }

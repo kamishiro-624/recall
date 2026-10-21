@@ -1,5 +1,5 @@
-/* AI-written questions. Three providers, chosen in Settings:
-   chrome = Chrome's built-in on-device model (no key), gemini = Google Gemini API (free key), claude = Anthropic API (key; no key needed inside Claude).
+/* AI-written questions. Four providers, chosen in Settings:
+   puter = Puter.js (free Puter account, nothing to install, no key), chrome = Chrome's built-in on-device model (no key), gemini = Google Gemini API (free key), claude = Anthropic API (key; no key needed inside Claude).
    Slide/document text is the only thing ever sent, and only to the provider you pick (nothing is sent for chrome). */
 var AI_FMT_LINES = "Output format: one JSON object per line and nothing else (no code fences, no commentary, no line breaks inside a value):\n{\"q\": \"question or sentence\", \"a\": \"model answer\", \"src\": \"title of the main slide or section it draws on\", \"note\": \"\"}";
 var AI_FMT_JSON = "Output format: a single JSON object {\"cards\": [ ... ]}. Each card is {\"q\": \"question or sentence\", \"a\": \"model answer\", \"src\": \"title of the main slide or section it draws on\", \"note\": \"\"}.";
@@ -30,6 +30,10 @@ function aiSystem(json) {
 }
 var AI_GEM_LIST = [];
 var AI_PROV = {
+  puter: {
+    name: "Puter (free account, nothing to install)", short: "Puter. The slide text is sent to Puter and the AI company behind the model", chunk: 30000, batch: 10, prior: 80, call: aiPuterCall,
+    notes: [["Cost", "Free. Each person signs in with their own free Puter account, and their usage comes out of that account's free monthly allowance. When it runs out, Puter asks to upgrade, so the limits can change."], ["Privacy", "Slide text goes to Puter and the AI company behind the model. Students use their own accounts, so check your school's rules on student accounts."], ["Needs", "Nothing to install and no key. A sign-in window opens the first time (allow pop-ups). Some school networks block Puter."], ["Quality", "Generally strong, but it depends on the model Puter uses by default."]]
+  },
   chrome: {
     name: "Chrome built-in AI (on this device)", short: "Chrome's built-in AI. It runs on this device and nothing is sent anywhere", chunk: 5000, batch: 5, prior: 25, call: aiChromeCall,
     notes: [["Cost", "Free. No account or key."], ["Privacy", "Runs on this device. Slide text never leaves it."], ["Needs", "Desktop Chrome with two flags switched on (Settings shows the steps if it's off), a computer that meets Google's requirements, and a one-time download of the model (several GB). For web pages this is still experimental, so it won't work on a stock Chrome, phones, other browsers, inside embedded pages, or on many school Chromebooks."], ["Quality", "A small model, so expect simpler questions and review every card. It writes a few at a time, so large sets are slow. Works best for English text."]]
@@ -43,7 +47,7 @@ var AI_PROV = {
     notes: [["Cost", "An Anthropic API key, billed by use (a few cents for a deck). No key is needed when Recall is running inside Claude."], ["Privacy", "Slide text is sent to Anthropic."], ["Needs", "A key from console.anthropic.com. It stays in this browser only."], ["Quality", "Strong."]]
   }
 };
-function aiProvider() { var p = S().aiProvider; return AI_PROV[p] ? p : "chrome" }
+function aiProvider() { var p = S().aiProvider; return AI_PROV[p] ? p : "puter" }
 /* prompt building and parsing */
 function aiPiece(s) {
   return "## " + s.title + "\n" + s.body.map(function (b) { return "- " + b.replace(/\s*\n\s*/g, " ") }).join("\n") + (s.notes ? "\nSpeaker notes: " + s.notes : "") + (!s.body.length && !s.notes && s.imgs.length ? "\n(picture only)" : "")
@@ -97,11 +101,38 @@ async function aiGeminiCall(sys, user, o) {
   if (!t) throw new Error("Gemini returned nothing" + (d.promptFeedback && d.promptFeedback.blockReason ? " (blocked: " + d.promptFeedback.blockReason + ")" : "") + ". Try again.");
   return t
 }
+function aiErr(e, fallback) { return (e && e.message) || (e && e.error && (e.error.message || e.error)) || (typeof e === "string" ? e : "") || fallback }
+function aiLoadPuter() {
+  if (window.puter) return Promise.resolve(window.puter);
+  if (aiLoadPuter.p) return aiLoadPuter.p;
+  return aiLoadPuter.p = new Promise(function (res, rej) {
+    var s = document.createElement("script"); s.src = "https://js.puter.com/v2/";
+    s.onload = function () { window.puter ? res(window.puter) : (aiLoadPuter.p = null, rej(new Error("Puter loaded but isn't ready. Reload the page and try again."))) };
+    s.onerror = function () { aiLoadPuter.p = null; rej(new Error("Couldn't load Puter. Check your internet connection; some school networks block it.")) };
+    document.head.appendChild(s)
+  })
+}
+function aiPuterText(r) {
+  if (typeof r === "string") return r;
+  var c = r && r.message ? r.message.content : r && r.content;
+  if (typeof c === "string") return c;
+  if (Array.isArray(c)) return c.map(function (b) { return (b && b.text) || "" }).join("");
+  return String((r && r.text) || "")
+}
+async function aiPuterCall(sys, user, o) {
+  var p = await aiLoadPuter();
+  try {
+    if (!(await p.auth.isSignedIn())) { if (o.status) o.status("A Puter sign-in window should open. Allow pop-ups if nothing appears."); await p.auth.signIn() }
+    if (o.status) o.status("Writing questions…");
+    var opts = {}; if (S().puterModel) opts.model = S().puterModel;
+    return aiPuterText(await p.ai.chat([{ role: "system", content: sys }, { role: "user", content: user }], opts))
+  } catch (e) { throw new Error("Puter couldn't finish: " + aiErr(e, "the sign-in was closed or the free allowance is used up") + ".") }
+}
 async function aiChromeSession(system, status) {
   if (typeof LanguageModel === "undefined") throw new Error("Chrome's built-in AI isn't switched on for web pages yet. In Chrome, open chrome://flags/#prompt-api-for-gemini-nano, set it to Enabled, do the same for chrome://flags/#optimization-guide-on-device-model, then restart Chrome and try again." + (window.top !== window.self ? " Recall also seems to be running inside another page; Chrome blocks the AI there, so open Recall's own page (index.html) or choose another provider." : " Or choose Gemini or Claude in Settings."));
   var io = { expectedInputs: [{ type: "text", languages: ["en"] }], expectedOutputs: [{ type: "text", languages: ["en"] }] }, av;
   try { av = await LanguageModel.availability(io) } catch (e) { io = {}; av = await LanguageModel.availability() }
-  if (av === "unavailable") throw new Error("Chrome's built-in AI isn't available on this device (it needs desktop Chrome and enough free disk space). Choose Gemini or Claude in Settings instead.");
+  if (av === "unavailable") throw new Error("Chrome's built-in AI isn't available on this device (it needs desktop Chrome and enough free disk space). Choose another AI provider in Settings.");
   var opts = { monitor: function (m) { m.addEventListener("downloadprogress", function (e) { if (status) status("Downloading the on-device model… " + Math.round(e.loaded * 100) + "%") }) } };
   if (io.expectedInputs) { opts.expectedInputs = io.expectedInputs; opts.expectedOutputs = io.expectedOutputs }
   if (system) opts.initialPrompts = [{ role: "system", content: system }];
@@ -113,7 +144,7 @@ async function aiChromeCall(sys, user, o) {
   try {
     if (o.status) o.status("Writing questions…");
     try { return await ses.prompt(user, { responseConstraint: schema }) }
-    catch (e) { if (e && e.name === "QuotaExceededError") throw new Error("That section is too long for the on-device model. Choose Gemini or Claude in Settings for long decks."); if (e && e.name === "AbortError") throw e; return await ses.prompt(user) }
+    catch (e) { if (e && e.name === "QuotaExceededError") throw new Error("That section is too long for the on-device model. Choose another AI provider in Settings for long decks."); if (e && e.name === "AbortError") throw e; return await ses.prompt(user) }
   } finally { if (ses && ses.destroy) ses.destroy() }
 }
 async function aiGenerate(secs, o, progress) {
@@ -138,6 +169,7 @@ function aiPanel() {
     '<div class="row"><button class="primary" id="aib"' + (imp.secs.length ? "" : " disabled") + '>' + (has ? "Write a new set" : "Write questions with AI") + '</button></div><p class="hint" id="aim" role="status">' + esc(imp.secs.length ? (imp.aiMsg || "") : "Import a slide deck or document first.") + '</p>'
 }
 function aiWire(v) {
+  if (aiProvider() === "puter") aiLoadPuter().catch(function () { });
   var c = $("#aic"); if (c) c.onclick = function () { tab = "set"; render() };
   var b = $("#aib"); if (!b) return;
   b.onclick = async function () {
@@ -155,7 +187,9 @@ function aiWire(v) {
 /* Settings screen: provider dropdown, a note for each provider, and that provider's fields */
 function aiSettings(el) {
   var s = S(), p = aiProvider(), P = AI_PROV[p];
-  var fields = p === "chrome" ? '<div class="row"><button id="aiChk" type="button">Check this device</button></div>' :
+  if (p === "puter") aiLoadPuter().catch(function () { });
+  var fields = p === "puter" ? '<div class="row"><button id="pSign" type="button">Sign in to Puter</button></div><label for="puterModel">Model (optional)</label><input type="text" id="puterModel" autocomplete="off" spellcheck="false" value="' + esc(s.puterModel || "") + '" placeholder="Leave empty to use Puter\'s default"><p class="hint" style="margin:4px 0 0">There is no key to paste. Sign in once here, or wait for the sign-in window the first time you write questions.</p>' :
+    p === "chrome" ? '<div class="row"><button id="aiChk" type="button">Check this device</button></div>' :
     p === "gemini" ? '<label for="gemKey">Gemini API key</label><input type="password" id="gemKey" autocomplete="off" spellcheck="false" value="' + esc(s.gemKey || "") + '" placeholder="Paste your key"><p class="hint" style="margin:4px 0 0"><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Get a free key in Google AI Studio</a>. Don\'t enter it on a shared computer.</p>' +
       '<label for="gemModel">Model</label><input type="text" id="gemModel" list="gemList" autocomplete="off" spellcheck="false" value="' + esc(s.gemModel || "") + '"><datalist id="gemList">' + AI_GEM_LIST.map(function (m) { return '<option value="' + esc(m) + '">' }).join("") + '</datalist><div class="row"><button id="gemTest" type="button">Test key and list models</button></div>' :
       '<label for="aiKey">Anthropic API key</label><input type="password" id="aiKey" autocomplete="off" spellcheck="false" value="' + esc(s.aiKey || "") + '" placeholder="Leave empty inside Claude"><p class="hint" style="margin:4px 0 0">Stored in this browser only and never included in exports. Don\'t enter it on a shared computer.</p>' +
@@ -165,7 +199,14 @@ function aiSettings(el) {
   function msg(t) { $("#aiMsgS").textContent = t }
   $("#aiProv").onchange = function () { s.aiProvider = this.value; save(); aiSettings(el) };
   function bind(id, key, fallback) { var i = $("#" + id); if (i) i.onchange = function () { s[key] = this.value.trim() || fallback || ""; this.value = s[key]; save(); msg("Saved.") } }
-  bind("gemKey", "gemKey"); bind("gemModel", "gemModel", DEFAULTS.gemModel); bind("aiKey", "aiKey"); bind("aiModel", "aiModel", DEFAULTS.aiModel);
+  bind("gemKey", "gemKey"); bind("gemModel", "gemModel", DEFAULTS.gemModel); bind("aiKey", "aiKey"); bind("aiModel", "aiModel", DEFAULTS.aiModel); bind("puterModel", "puterModel");
+  if ($("#pSign")) $("#pSign").onclick = async function () {
+    msg("Opening Puter…");
+    try {
+      var p = await aiLoadPuter(); if (!(await p.auth.isSignedIn())) await p.auth.signIn();
+      var u = await p.auth.getUser(); msg("Signed in" + (u && u.username ? " as " + u.username : "") + ". You're ready to write questions.")
+    } catch (e) { msg(aiErr(e, "The sign-in didn't finish.") + " If no window opened, allow pop-ups for this page and click again.") }
+  };
   if ($("#aiChk")) $("#aiChk").onclick = async function () {
     msg("Checking…");
     try { var ses = await aiChromeSession("", function (t) { msg(t) }); if (ses.destroy) ses.destroy(); msg("Ready. The on-device model is installed and working.") }

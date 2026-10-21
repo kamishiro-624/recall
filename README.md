@@ -7,7 +7,7 @@ Built for the TSA Software Development event. Everything runs in the browser. Th
 ## Features
 
 - **Cards from slide decks and documents.** Upload a `.pptx` or `.docx`. Recall reads slide text, tables, speaker notes and pictures, then proposes cards you review before adding.
-- **AI-written questions (optional).** Instead of copying slide text, an AI model writes why/how, compare, connect, predict and apply questions with short model answers, and flags slide mistakes for you to check. Pick the provider in Settings: Chrome's built-in on-device AI (free, no key, nothing leaves the device, desktop Chrome only, simpler questions), Google Gemini with a free AI Studio key (best free quality), or Claude with an Anthropic API key (no key needed inside Claude). Everything is reviewed before it is added.
+- **AI-written questions (optional).** Instead of copying slide text, an AI model writes why/how, compare, connect, predict and apply questions with short model answers, and flags slide mistakes for you to check. Pick the provider in Settings: Puter (default; free account, nothing to install, no key), Chrome's built-in on-device AI (free, no key, nothing leaves the device, but needs flags switched on and a desktop computer), Google Gemini with a free AI Studio key, or Claude with an Anthropic API key (no key needed inside Claude). Teachers can also generate a deck once and share the exported Recall JSON, so students need no AI at all. Everything is reviewed before it is added.
 - **Dashboard with modular widgets.** Reviews, lessons, daily progress, progress by stage, a 7-day review forecast, streak and accuracy, a 28-day activity map, decks, trouble spots and quick actions. Show, hide and reorder them with *Customize*.
 - **Learning stage and daily limits.** New cards are taught in lessons (in small batches), then quizzed until you answer correctly a set number of times before they join reviews. Settings control new cards per day, maximum reviews per day, learning steps, lesson batch size and shuffle.
 - **Duplicate detection** when creating and importing (same prompt, same picture or audio), within a deck or across all decks, plus one-click cleanup in the Library.
@@ -49,7 +49,7 @@ js/study.js           reviews, lessons (learning stage), practice, scheduling
 js/settings.js        daily limits, learning steps, duplicate scope
 js/create.js          create and edit cards, image and audio capture
 js/parsers.js         pptx, docx, csv/tsv, txt/md and json parsers; card generation
-js/ai.js              optional AI question writing: Chrome built-in, Gemini and Claude providers
+js/ai.js              optional AI question writing: Puter, Chrome built-in, Gemini and Claude providers
 js/import-view.js     import screen and the review-before-add list
 js/library.js         library, search, progress boxes and all exports
 js/app.js             boot
