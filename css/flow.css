@@ -1,0 +1,45 @@
+/* Study flow: Today card, session header, steps, progress, summary, add-cards switch, advanced settings.
+   Loaded after styles.css. Uses currentColor and the existing --acc / --line / --ok tokens so both themes work. */
+.fl-hero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 20px; margin-bottom: 14px }
+.fl-title { font-size: 1.35rem; font-weight: 700; line-height: 1.25 }
+.fl-sub { margin: 4px 0 0; opacity: .8 }
+.fl-cta { font-size: 1.05rem; padding: 12px 22px }
+.fl-prog .meta { margin-bottom: 4px }
+.fl-foot { margin-top: 14px; justify-content: center }
+
+/* Session header */
+.fl-head { margin: 0 0 12px }
+.fl-steps { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0 0 10px; padding: 0 }
+.fl-steps li { display: inline-flex; align-items: center; gap: .5em; padding: 6px 12px; border-radius: 999px; font-size: .92rem;
+  border: 1px solid rgba(127, 127, 127, .4); border: 1px solid var(--line, color-mix(in srgb, currentColor 28%, transparent)); opacity: .65 }
+.fl-steps li b { display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; border-radius: 50%; font-size: .85em; background: rgba(127, 127, 127, .25); background: color-mix(in srgb, currentColor 14%, transparent) }
+.fl-steps li span { opacity: .8; font-size: .9em }
+.fl-steps li.on { opacity: 1; border-color: var(--acc, #6b7cff); background: rgba(107, 124, 255, .16); background: color-mix(in srgb, var(--acc, #6b7cff) 16%, transparent) }
+.fl-steps li.on b { background: var(--acc, #6b7cff); color: #0b1020 }
+.fl-steps li.ok { opacity: 1 }
+.fl-steps li.ok b { background: var(--ok, #4caf7d); color: #0b1020 }
+.fl-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: .9rem; opacity: .85 }
+.fl-last { margin: 0 0 10px; padding: 8px 12px; font-size: .92rem; border-radius: 8px; background: rgba(127, 127, 127, .12); background: color-mix(in srgb, currentColor 7%, transparent) }
+.fl-pips { letter-spacing: .12em; color: var(--acc, #6b7cff) }
+.rate button small { display: block; margin-top: 2px; font-size: .78em; font-weight: 400; opacity: .75 }
+
+/* Summary */
+.fl-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 }
+.fl-stats div { flex: 1 1 120px; padding: 12px 14px; border-radius: 12px; text-align: center;
+  border: 1px solid rgba(127, 127, 127, .4); border: 1px solid var(--line, color-mix(in srgb, currentColor 28%, transparent)) }
+.fl-stats b { display: block; font-size: 1.8rem; line-height: 1.1 }
+.fl-stats span { font-size: .85rem; opacity: .8 }
+
+/* Add cards switch */
+.seg { display: flex; gap: 0; margin: 0 0 14px; border-radius: 12px; overflow: hidden;
+  border: 1px solid rgba(127, 127, 127, .4); border: 1px solid var(--line, color-mix(in srgb, currentColor 28%, transparent)) }
+.seg button { flex: 1; margin: 0; border: 0; border-radius: 0; padding: 12px 14px; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer }
+.seg button + button { border-left: 1px solid rgba(127, 127, 127, .4); border-left: 1px solid var(--line, color-mix(in srgb, currentColor 28%, transparent)) }
+.seg button.on { background: var(--acc, #6b7cff); color: #0b1020 }
+.seg button:not(.on):hover { background: rgba(127, 127, 127, .15); background: color-mix(in srgb, currentColor 8%, transparent) }
+
+/* Advanced settings */
+details.adv > summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; padding: 4px 0; list-style: none }
+details.adv > summary::-webkit-details-marker { display: none }
+details.adv > summary::before { content: "\25b8"; display: inline-block; width: 1.2em; transition: transform .15s }
+details.adv[open] > summary::before { transform: rotate(90deg) }

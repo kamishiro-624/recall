@@ -9,6 +9,7 @@ Built for the TSA Software Development event. Everything runs in the browser. Th
 - **Cards from slide decks and documents.** Upload a `.pptx` or `.docx`. Recall reads slide text, tables, speaker notes and pictures, then proposes cards you review before adding.
 - **AI-written questions (optional).** Instead of copying slide text, an AI model writes why/how, compare, connect, predict and apply questions with short model answers, and flags slide mistakes for you to check. Pick the provider in Settings: Puter (default; free account, nothing to install, no key), Chrome's built-in on-device AI (free, no key, nothing leaves the device, but needs flags switched on and a desktop computer), Google Gemini with a free AI Studio key, or Claude with an Anthropic API key (no key needed inside Claude). Teachers can also generate a deck once and share the exported Recall JSON, so students need no AI at all. Everything is reviewed before it is added.
 - **Dashboard with modular widgets.** Reviews, lessons, daily progress, progress by stage, a 7-day review forecast, streak and accuracy, a 28-day activity map, decks, trouble spots and quick actions. Show, hide and reorder them with *Customize*.
+- **One guided session.** Press *Start studying* on Today. Recall runs the reviews that are due, then teaches a few new cards and quizzes them, with a step tracker, a progress bar, a note after every answer, and a summary at the end that shows how far you are through the deck. *Practice* goes through every card without changing the schedule.
 - **Learning stage and daily limits.** New cards are taught in lessons (in small batches), then quizzed until you answer correctly a set number of times before they join reviews. Settings control new cards per day, maximum reviews per day, learning steps, lesson batch size and shuffle.
 - **Duplicate detection** when creating and importing (same prompt, same picture or audio), within a deck or across all decks, plus one-click cleanup in the Library.
 - **Four card types.** Text, fill-in-the-blank (`{{c1::hidden words}}`), image and audio (upload or record).
@@ -45,7 +46,8 @@ js/core.js            state, helpers, IndexedDB storage, card model, duplicate k
 js/download.js        file saving (browser download, or Claude artifact downloads)
 js/shell.js           deck selector, tabs, router
 js/dashboard.js       widget definitions, layout, customize mode
-js/study.js           reviews, lessons (learning stage), practice, scheduling
+js/study.js           the guided study session: reviews, new cards, practice, scheduling, progress numbers
+css/flow.css          styling for the Today card, session header, summary and settings sections
 js/settings.js        daily limits, learning steps, duplicate scope
 js/create.js          create and edit cards, image and audio capture
 js/parsers.js         pptx, docx, csv/tsv, txt/md and json parsers; card generation
