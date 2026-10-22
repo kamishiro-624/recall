@@ -1,5 +1,9 @@
 /* Study flow: Today card, session header, steps, progress, summary, add-cards switch, advanced settings.
-   Loaded after styles.css. Uses currentColor and the existing --acc / --line / --ok tokens so both themes work. */
+   Loaded after styles.css and built on its theme tokens. */
+.wfull {
+  grid-column: 1 / -1
+}
+
 .fl-hero {
   display: flex;
   flex-wrap: wrap;
@@ -10,18 +14,16 @@
 }
 
 .fl-title {
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1.25
+  font: 700 22px/1.25 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif
 }
 
 .fl-sub {
   margin: 4px 0 0;
-  opacity: .8
+  color: var(--mute)
 }
 
 .fl-cta {
-  font-size: 1.05rem;
+  font-size: 17px;
   padding: 12px 22px
 }
 
@@ -54,47 +56,44 @@
   gap: .5em;
   padding: 6px 12px;
   border-radius: 999px;
-  font-size: .92rem;
-  border: 1px solid rgba(127, 127, 127, .4);
-  border: 1px solid var(--line, color-mix(in srgb, currentColor 28%, transparent));
-  opacity: .65
+  font: 500 14.5px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  color: var(--mute);
+  background: var(--surface);
+  border: 1px solid var(--line)
 }
 
 .fl-steps li b {
   display: inline-grid;
   place-items: center;
-  width: 1.5em;
-  height: 1.5em;
+  width: 1.6em;
+  height: 1.6em;
   border-radius: 50%;
   font-size: .85em;
-  background: rgba(127, 127, 127, .25);
-  background: color-mix(in srgb, currentColor 14%, transparent)
+  color: var(--mute);
+  background: var(--line)
 }
 
 .fl-steps li span {
-  opacity: .8;
-  font-size: .9em
+  font-size: .92em
 }
 
 .fl-steps li.on {
-  opacity: 1;
-  border-color: var(--acc, #6b7cff);
-  background: rgba(107, 124, 255, .16);
-  background: color-mix(in srgb, var(--acc, #6b7cff) 16%, transparent)
+  color: var(--ink);
+  border-color: var(--acc)
 }
 
 .fl-steps li.on b {
-  background: var(--acc, #6b7cff);
-  color: #0b1020
+  color: var(--accInk);
+  background: var(--acc)
 }
 
 .fl-steps li.ok {
-  opacity: 1
+  color: var(--ink)
 }
 
 .fl-steps li.ok b {
-  background: var(--ok, #4caf7d);
-  color: #0b1020
+  color: var(--accInk);
+  background: var(--ok)
 }
 
 .fl-meta {
@@ -102,30 +101,30 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 6px;
-  font-size: .9rem;
-  opacity: .85
+  font-size: 14px;
+  color: var(--mute)
 }
 
 .fl-last {
-  margin: 0 0 10px;
+  margin: 8px 0 10px;
   padding: 8px 12px;
-  font-size: .92rem;
-  border-radius: 8px;
-  background: rgba(127, 127, 127, .12);
-  background: color-mix(in srgb, currentColor 7%, transparent)
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--bg);
+  border-radius: 8px
 }
 
 .fl-pips {
   letter-spacing: .12em;
-  color: var(--acc, #6b7cff)
+  color: var(--acc)
 }
 
 .rate button small {
   display: block;
   margin-top: 2px;
-  font-size: .78em;
+  font-size: 12px;
   font-weight: 400;
-  opacity: .75
+  color: var(--mute)
 }
 
 /* Summary */
@@ -139,68 +138,59 @@
 .fl-stats div {
   flex: 1 1 120px;
   padding: 12px 14px;
+  border: 1px solid var(--line);
   border-radius: 12px;
-  text-align: center;
-  border: 1px solid rgba(127, 127, 127, .4);
-  border: 1px solid var(--line, color-mix(in srgb, currentColor 28%, transparent))
+  text-align: center
 }
 
 .fl-stats b {
   display: block;
-  font-size: 1.8rem;
-  line-height: 1.1
+  font: 700 30px/1.1 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif
 }
 
 .fl-stats span {
-  font-size: .85rem;
-  opacity: .8
+  font-size: 14px;
+  color: var(--mute)
 }
 
 /* Add cards switch */
 .seg {
   display: flex;
-  gap: 0;
   margin: 0 0 14px;
-  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(127, 127, 127, .4);
-  border: 1px solid var(--line, color-mix(in srgb, currentColor 28%, transparent))
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px
 }
 
 .seg button {
   flex: 1;
   margin: 0;
-  border: 0;
-  border-radius: 0;
   padding: 12px 14px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
   font-weight: 600;
-  cursor: pointer
+  background: transparent;
+  border: 0;
+  border-radius: 0
 }
 
 .seg button+button {
-  border-left: 1px solid rgba(127, 127, 127, .4);
-  border-left: 1px solid var(--line, color-mix(in srgb, currentColor 28%, transparent))
+  border-left: 1px solid var(--line)
 }
 
 .seg button.on {
-  background: var(--acc, #6b7cff);
-  color: #0b1020
+  color: var(--accInk);
+  background: var(--acc)
 }
 
 .seg button:not(.on):hover {
-  background: rgba(127, 127, 127, .15);
-  background: color-mix(in srgb, currentColor 8%, transparent)
+  background: var(--bg)
 }
 
 /* Advanced settings */
 details.adv>summary {
   cursor: pointer;
-  font-weight: 700;
-  font-size: 1.05rem;
   padding: 4px 0;
+  font: 700 17px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   list-style: none
 }
 

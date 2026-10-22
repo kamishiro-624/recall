@@ -3,7 +3,7 @@ function act(x) { return x.r + x.q + x.l > 0 }
 function bar(label, v, max) { var p = max > 0 ? Math.min(100, v / max * 100) : 0; return '<div class="meta ui" style="margin-top:8px"><span>' + label + '</span><span>' + v + (max > 0 ? " / " + max : " · no limit") + '</span></div><div class="bar"><i style="width:' + p + '%"></i></div>' }
 var WDEFS = {
   today: {
-    t: "Today", w: 2, r: function () {
+    t: "Today", w: 3, r: function () {
       var st = stats(scoped()), w = todayWork(), more = inStage("new").length, nx = nextDueTime(), head, sub, btns;
       if (sess && sess.phase === "done") sess = null;
       if (live()) { head = "Session in progress"; sub = remaining(sess) + " left in this session."; btns = '<button class="primary fl-cta" data-go="study">Continue studying</button>' }
@@ -42,7 +42,7 @@ var WDEFS = {
       if (!DB.decks.length) return '<p class="hint">No decks yet.</p>';
       return DB.decks.map(function (d) {
         var cs = DB.cards.filter(function (c) { return c.deck === d.id }), due = cs.filter(function (c) { return c.stage === "review" && c.due <= Date.now() }).length, nw = cs.filter(function (c) { return c.stage !== "review" }).length;
-        return '<div class="item" style="padding:6px 0"><div class="body"><div>' + esc(d.name) + '</div><div class="a">' + cs.length + ' cards \u00b7 ' + stats(cs).pct + '% learned \u00b7 ' + due + ' due \u00b7 ' + nw + ' to learn</div></div><button class="sm" data-deck="' + d.id + '"' + (DB.cur === d.id ? ' disabled' : '') + '>' + (DB.cur === d.id ? "Viewing" : "View") + '</button></div>'
+        return '<div class="item" style="padding:6px 0"><div class="body"><div>' + esc(d.name) + '</div><div class="a">' + cs.length + ' cards \u00b7 ' + stats(cs).pct + '% learned</div></div><button class="sm" data-deck="' + d.id + '"' + (DB.cur === d.id ? ' disabled' : '') + '>' + (DB.cur === d.id ? "Viewing" : "View") + '</button></div>'
       }).join("") + (DB.cur !== "all" ? '<div class="row"><button class="sm" data-deck="all">Show all decks</button></div>' : "")
     }
   },
@@ -65,7 +65,7 @@ function dashView(v) {
   v.innerHTML = '<div class="row" style="margin:0 0 12px;justify-content:space-between"><h2 style="margin:0">' + (DB.cur === "all" ? "All decks" : esc(deckName(DB.cur))) + '</h2></div>' + (editDash ? '<p class="hint">Show or hide sections and move them up or down.</p>' : "") +
     '<div class="grid">' + ws.map(function (w, i) {
       var d = WDEFS[w.id]; if (!w.on && !editDash) return "";
-      return '<section class="w' + (d.w === 2 ? " w2" : "") + (w.on ? "" : " off") + '" aria-label="' + d.t + '"><div class="wh"><h3>' + d.t + '</h3>' + (editDash ? '<span class="wc">' + (w.id === "today" ? "" : '<label class="inl"><input type="checkbox" data-vis="' + i + '"' + (w.on ? " checked" : "") + '> Show</label>') + '<button class="sm" data-mv="' + i + '" data-dir="-1" aria-label="Move ' + d.t + ' earlier">\u2191</button><button class="sm" data-mv="' + i + '" data-dir="1" aria-label="Move ' + d.t + ' later">\u2193</button></span>' : "") + '</div>' + (w.on ? d.r() : '<p class="hint">Hidden</p>') + '</section>'
+      return '<section class="w' + (d.w === 3 ? " wfull" : d.w === 2 ? " w2" : "") + (w.on ? "" : " off") + '" aria-label="' + d.t + '"><div class="wh"><h3>' + d.t + '</h3>' + (editDash ? '<span class="wc">' + (w.id === "today" ? "" : '<label class="inl"><input type="checkbox" data-vis="' + i + '"' + (w.on ? " checked" : "") + '> Show</label>') + '<button class="sm" data-mv="' + i + '" data-dir="-1" aria-label="Move ' + d.t + ' earlier">\u2191</button><button class="sm" data-mv="' + i + '" data-dir="1" aria-label="Move ' + d.t + ' later">\u2193</button></span>' : "") + '</div>' + (w.on ? d.r() : '<p class="hint">Hidden</p>') + '</section>'
     }).join("") + '</div><div class="row fl-foot"><button class="sm" id="cz">' + (editDash ? "Done customizing" : "Customize this page") + '</button></div>';
   wire(v);
   $("#cz").onclick = function () { editDash = !editDash; render() };
