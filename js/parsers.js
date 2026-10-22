@@ -4,9 +4,10 @@ function num(n) { return +(n.match(/(\d+)\.xml$/) || [0, 0])[1] }
 function txt(el) { var o = []; var t = el.getElementsByTagName("a:t"); for (var i = 0; i < t.length; i++)o.push(t[i].textContent); return o.join("").trim() }
 function xml(s) { return new DOMParser().parseFromString(s, "application/xml") }
 var MIME = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml" };
-async function readPptx(buf, name) {
+async function readPptx(buf, name, prog) {
   var z = await JSZip.loadAsync(buf), secs = [];
   var names = Object.keys(z.files).filter(function (n) { return /^ppt\/slides\/slide\d+\.xml$/.test(n) }).sort(function (a, b) { return num(a) - num(b) });
+  if (prog) prog(0, names.length);
   for (var k = 0; k < names.length; k++) {
     var n = names[k], doc = xml(await z.file(n).async("string")), title = "", body = [], imgs = [], notes = "";
     var sps = doc.getElementsByTagName("p:sp");
@@ -27,6 +28,7 @@ async function readPptx(buf, name) {
       }
     }
     if (title || body.length || imgs.length) secs.push({ title: title || "Slide " + (k + 1), body: body, imgs: imgs, notes: notes })
+    if (prog) { prog(k + 1, names.length); await new Promise(function (r) { setTimeout(r, 0) }) }
   }
   return secs
 }

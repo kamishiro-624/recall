@@ -120,6 +120,7 @@ function aiPuterText(r) {
   return String((r && r.text) || "")
 }
 async function aiPuterCall(sys, user, o) {
+  if (o.status && !window.puter) o.status("Loading Puter…");
   var p = await aiLoadPuter();
   try {
     if (!(await p.auth.isSignedIn())) { if (o.status) o.status("A Puter sign-in window should open. Allow pop-ups if nothing appears."); await p.auth.signIn() }
@@ -133,7 +134,7 @@ async function aiChromeSession(system, status) {
   var io = { expectedInputs: [{ type: "text", languages: ["en"] }], expectedOutputs: [{ type: "text", languages: ["en"] }] }, av;
   try { av = await LanguageModel.availability(io) } catch (e) { io = {}; av = await LanguageModel.availability() }
   if (av === "unavailable") throw new Error("Chrome's built-in AI isn't available on this device (it needs desktop Chrome and enough free disk space). Choose another AI provider in Settings.");
-  var opts = { monitor: function (m) { m.addEventListener("downloadprogress", function (e) { if (status) status("Downloading the on-device model… " + Math.round(e.loaded * 100) + "%") }) } };
+  var opts = { monitor: function (m) { m.addEventListener("downloadprogress", function (e) { if (status) status("Downloading the on-device model (one time only)…", Math.round(e.loaded * 100)) }) } };
   if (io.expectedInputs) { opts.expectedInputs = io.expectedInputs; opts.expectedOutputs = io.expectedOutputs }
   if (system) opts.initialPrompts = [{ role: "system", content: system }];
   return LanguageModel.create(opts)
@@ -147,41 +148,61 @@ async function aiChromeCall(sys, user, o) {
     catch (e) { if (e && e.name === "QuotaExceededError") throw new Error("That section is too long for the on-device model. Choose another AI provider in Settings for long decks."); if (e && e.name === "AbortError") throw e; return await ses.prompt(user) }
   } finally { if (ses && ses.destroy) ses.destroy() }
 }
-async function aiGenerate(secs, o, progress) {
+async function aiGenerate(secs, o) {
   var pk = aiProvider(), P = AI_PROV[pk], chunks = aiChunks(secs, P.chunk), tl = chunks.reduce(function (a, c) { return a + c.len }, 0) || 1, all = [], sys = aiSystem(pk === "chrome");
-  for (var i = 0; i < chunks.length; i++) {
-    var want = Math.max(1, Math.round(o.count * chunks[i].len / tl)), got = [], tries = 0, cap = Math.ceil(want / P.batch) + 2;
+  var wants = chunks.map(function (c) { return Math.max(1, Math.round(o.count * c.len / tl)) }), total = wants.reduce(function (a, w) { return a + Math.ceil(w / P.batch) }, 0), done = 0, failed = null;
+  var report = o.report || function () { }, stop = o.cancelled || function () { return false };
+  o.status = o.status || function (t, pct) { if (typeof pct === "number" || /sign-in|download|loading/i.test(t || "")) report(t, pct, true) };
+  outer: for (var i = 0; i < chunks.length; i++) {
+    var want = wants[i], got = [], tries = 0, cap = Math.ceil(want / P.batch) + 2;
     while (got.length < want && tries < cap) {
+      if (stop()) { all = all.concat(got.slice(0, want)); got = []; break outer }
       tries++;
-      var n = Math.min(P.batch, want - got.length), text = await P.call(sys, aiUser(chunks[i].text, n, all.concat(got).map(function (c) { return c.q }), o, P), o);
-      got = got.concat(aiParse(text)); progress(Math.min(o.count, all.length + got.length), o.count)
+      var have = all.length + got.length, n = Math.min(P.batch, want - got.length);
+      report("Asking the AI for questions (request " + (done + 1) + " of about " + total + ")" + (have ? " \u00b7 " + have + " of " + o.count + " written so far" : ""), Math.min(99, done / total * 100), true);
+      try { var text = await P.call(sys, aiUser(chunks[i].text, n, all.concat(got).map(function (c) { return c.q }), o, P), o) }
+      catch (e) { if (all.length + got.length) { failed = e; all = all.concat(got.slice(0, want)); got = []; break outer } throw e }
+      done++; got = got.concat(aiParse(text));
     }
     all = all.concat(got.slice(0, want))
   }
+  o.warning = failed ? failed.message : "";
   return all
 }
-/* import screen pieces */
-function aiPanel() {
+/* Import screen: the AI section (only shown when "AI-written questions" is chosen) */
+function aiControls() {
   var n = imp.aiN || 30, has = (imp.ai || []).length, P = AI_PROV[aiProvider()];
-  return '<h3>Questions written by AI</h3><p class="hint">Reads your slides or notes and writes questions about the ideas behind them (why, how, compare, predict, apply) instead of repeating the slide text. Provider: ' + esc(P.short) + '. <button class="sm" id="aic" type="button">Change in Settings</button></p>' +
+  return '<p class="hint">Reads your material and writes questions about the ideas behind it (why, how, compare, predict, apply), not just the slide wording. Provider: ' + esc(P.short) + '. <button class="sm" id="aic" type="button">Change in Settings</button></p>' +
     '<label for="aiN">How many questions</label><select id="aiN">' + [15, 30, 45].map(function (x) { return '<option' + (n === x ? " selected" : "") + '>' + x + '</option>' }).join("") + '</select>' +
     '<label for="aiG">Level or focus (optional)</label><input type="text" id="aiG" placeholder="e.g. 9th grade biology; stress how the two stages connect" value="' + esc(imp.aiG || "") + '">' +
-    '<div class="row"><button class="primary" id="aib"' + (imp.secs.length ? "" : " disabled") + '>' + (has ? "Write a new set" : "Write questions with AI") + '</button></div><p class="hint" id="aim" role="status">' + esc(imp.secs.length ? (imp.aiMsg || "") : "Import a slide deck or document first.") + '</p>'
+    '<div class="row"><button class="primary" id="aib" type="button">' + (has ? "Write a new set" : "Write questions with AI") + '</button><button id="aix" type="button" hidden>Stop</button></div>' +
+    progHTML("aiprog", "") + '<p class="hint" id="aim" role="status">' + esc(imp.aiMsg || "") + '</p>'
 }
 function aiWire(v) {
-  if (aiProvider() === "puter") aiLoadPuter().catch(function () { });
   var c = $("#aic"); if (c) c.onclick = function () { tab = "set"; render() };
   var b = $("#aib"); if (!b) return;
+  if (aiProvider() === "puter") aiLoadPuter().catch(function () { });
+  function rep(label, pct, busy) { imp.aiLabel = label; if (pct !== undefined) imp.aiPct = pct; progSet("aiprog", imp.aiPct, label, busy) }
+  if (imp.aiRunning) { b.disabled = true; $("#aix").hidden = false; progSet("aiprog", imp.aiPct, imp.aiLabel, true) }
+  $("#aix").onclick = function () { imp.aiCancel = true; $("#aix").disabled = true; rep("Stopping after the current request\u2026", undefined, true) };
   b.onclick = async function () {
-    imp.aiN = +$("#aiN").value; imp.aiG = $("#aiG").value.trim(); b.disabled = true; var m = $("#aim"); m.textContent = "Writing questions…";
-    var cnt = 0;
+    if (imp.aiRunning) return;
+    imp.aiN = +$("#aiN").value; imp.aiG = $("#aiG").value.trim(); imp.aiRunning = true; imp.aiCancel = false; imp.aiPct = null; imp.aiMsg = "";
+    b.disabled = true; $("#aix").hidden = false; $("#aix").disabled = false; var m = $("#aim"); m.textContent = ""; m.className = "hint"; rep("Getting ready\u2026", null, true);
+    var stopTimer = progTimer("aiprog"), o = { count: imp.aiN, guide: imp.aiG, report: rep, cancelled: function () { return imp.aiCancel } };
     try {
-      var cards = await aiGenerate(imp.secs, { count: imp.aiN, guide: imp.aiG, status: function (t) { m.textContent = t } }, function (n, t) { cnt = n; m.textContent = "Writing questions… " + n + " of " + t });
-      if (!cards.length) { m.textContent = "The AI didn't return any usable questions. Try again."; b.disabled = false; return }
-      imp.ai = cards; imp.o = { key: false, terms: false, cloze: false, img: !imp.o || imp.o.img };
-      imp.aiMsg = "Wrote " + cards.length + " questions. The slide-text cards above were switched off; turn them back on if you want them too.";
-      importView(v); rebuild(); importView(v)
-    } catch (e) { m.textContent = e.message || "Something went wrong."; b.disabled = false }
+      var cards = await aiGenerate(imp.secs, o);
+      stopTimer(); imp.aiRunning = false;
+      if (!cards.length) { progHide("aiprog"); m.className = "hint fl-err"; m.textContent = imp.aiCancel ? "Stopped before any questions were written." : "The AI didn't return any usable questions. Try again."; imp.aiMsg = m.textContent; b.disabled = false; $("#aix").hidden = true; return }
+      imp.ai = cards; imp.method = "ai"; rebuild();
+      var msg = (imp.aiCancel ? "Stopped. Kept " : "Wrote ") + cards.length + " questions. Review them below.";
+      progDone("aiprog", msg); imp.aiMsg = o.warning ? "Some requests failed (" + o.warning + "), so you may have fewer questions than you asked for." : "";
+      m.className = o.warning ? "hint fl-err" : "hint"; m.textContent = imp.aiMsg;
+      b.disabled = false; b.textContent = "Write a new set"; $("#aix").hidden = true; step3(v);
+      var s3 = $("#istep3"); if (s3 && s3.scrollIntoView) s3.scrollIntoView({ behavior: "smooth", block: "start" })
+    } catch (e) {
+      stopTimer(); imp.aiRunning = false; progHide("aiprog"); m.className = "hint fl-err"; m.textContent = e.message || "Something went wrong."; imp.aiMsg = m.textContent; b.disabled = false; $("#aix").hidden = true
+    }
   }
 }
 /* Settings screen: provider dropdown, a note for each provider, and that provider's fields */
@@ -195,31 +216,32 @@ function aiSettings(el) {
         '<label for="aiKey">Anthropic API key</label><input type="password" id="aiKey" autocomplete="off" spellcheck="false" value="' + esc(s.aiKey || "") + '" placeholder="Leave empty inside Claude"><p class="hint" style="margin:4px 0 0">Stored in this browser only and never included in exports. Don\'t enter it on a shared computer.</p>' +
         '<label for="aiModel">Model</label><input type="text" id="aiModel" autocomplete="off" spellcheck="false" value="' + esc(s.aiModel || "") + '"><p class="hint" style="margin:4px 0 0">Leave as is unless the service reports an unknown model.</p>';
   el.innerHTML = '<label for="aiProv">AI provider</label><select id="aiProv">' + Object.keys(AI_PROV).map(function (k) { return '<option value="' + k + '"' + (k === p ? " selected" : "") + '>' + esc(AI_PROV[k].name) + '</option>' }).join("") + '</select>' +
-    '<div class="ainote">' + P.notes.map(function (n) { return '<div><b>' + n[0] + ':</b> ' + esc(n[1]) + '</div>' }).join("") + '</div>' + fields + '<p class="hint" id="aiMsgS" role="status"></p>';
+    '<div class="ainote">' + P.notes.map(function (n) { return '<div><b>' + n[0] + ':</b> ' + esc(n[1]) + '</div>' }).join("") + '</div>' + fields + progHTML("setprog", "") + '<p class="hint" id="aiMsgS" role="status"></p>';
   function msg(t) { $("#aiMsgS").textContent = t }
+  function work(t, pct) { progSet("setprog", pct == null ? null : pct, t, pct == null) }
   $("#aiProv").onchange = function () { s.aiProvider = this.value; save(); aiSettings(el) };
   function bind(id, key, fallback) { var i = $("#" + id); if (i) i.onchange = function () { s[key] = this.value.trim() || fallback || ""; this.value = s[key]; save(); msg("Saved.") } }
   bind("gemKey", "gemKey"); bind("gemModel", "gemModel", DEFAULTS.gemModel); bind("aiKey", "aiKey"); bind("aiModel", "aiModel", DEFAULTS.aiModel); bind("puterModel", "puterModel");
   if ($("#pSign")) $("#pSign").onclick = async function () {
-    msg("Opening Puter…");
+    msg(""); work("Opening Puter\u2026");
     try {
-      var p = await aiLoadPuter(); if (!(await p.auth.isSignedIn())) await p.auth.signIn();
-      var u = await p.auth.getUser(); msg("Signed in" + (u && u.username ? " as " + u.username : "") + ". You're ready to write questions.")
-    } catch (e) { msg(aiErr(e, "The sign-in didn't finish.") + " If no window opened, allow pop-ups for this page and click again.") }
+      var p = await aiLoadPuter(); if (!(await p.auth.isSignedIn())) { work("Waiting for you to sign in in the Puter window\u2026"); await p.auth.signIn() }
+      var u = await p.auth.getUser(); progDone("setprog", "Signed in"); msg("Signed in" + (u && u.username ? " as " + u.username : "") + ". You're ready to write questions.")
+    } catch (e) { progHide("setprog"); msg(aiErr(e, "The sign-in didn't finish.") + " If no window opened, allow pop-ups for this page and click again.") }
   };
   if ($("#aiChk")) $("#aiChk").onclick = async function () {
-    msg("Checking…");
-    try { var ses = await aiChromeSession("", function (t) { msg(t) }); if (ses.destroy) ses.destroy(); msg("Ready. The on-device model is installed and working.") }
-    catch (e) { msg(e.message || "Couldn't start the on-device model.") }
+    msg(""); work("Checking this device\u2026");
+    try { var ses = await aiChromeSession("", work); if (ses.destroy) ses.destroy(); progDone("setprog", "Ready"); msg("The on-device model is installed and working.") }
+    catch (e) { progHide("setprog"); msg(e.message || "Couldn't start the on-device model.") }
   };
   if ($("#gemTest")) $("#gemTest").onclick = async function () {
-    var k = ($("#gemKey").value || "").trim(); if (!k) { msg("Paste a key first."); return } s.gemKey = k; save(); msg("Checking…");
+    var k = ($("#gemKey").value || "").trim(); if (!k) { msg("Paste a key first."); return } s.gemKey = k; save(); msg(""); work("Checking your key with Google\u2026");
     try {
       var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": k } });
-      if (!r.ok) { msg(r.status === 400 || r.status === 403 ? "Google rejected that key." : "Google returned an error (" + r.status + ")."); return }
+      if (!r.ok) { progHide("setprog"); msg(r.status === 400 || r.status === 403 ? "Google rejected that key." : "Google returned an error (" + r.status + ")."); return }
       var d = await r.json();
       AI_GEM_LIST = (d.models || []).filter(function (m) { return /generateContent/.test((m.supportedGenerationMethods || []).join()) && /gemini/i.test(m.name) }).map(function (m) { return m.name.replace(/^models\//, "") });
-      aiSettings(el); $("#aiMsgS").textContent = "The key works. " + AI_GEM_LIST.length + " models are available; click the Model box to pick one."
-    } catch (e) { msg("Couldn't reach Google. Check your internet connection.") }
+      aiSettings(el); progDone("setprog", "Key works"); $("#aiMsgS").textContent = AI_GEM_LIST.length + " models are available; click the Model box to pick one."
+    } catch (e) { progHide("setprog"); msg("Couldn't reach Google. Check your internet connection.") }
   }
 }
