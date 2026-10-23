@@ -451,3 +451,123 @@ details.adv[open]>summary::before {
 #syncbox .load {
    margin: 0 0 12px
 }
+
+/* Multiple choice and short answers */
+.mc {
+   display: grid;
+   gap: 8px;
+   margin: 12px 0
+}
+
+.mc-opt {
+   display: flex;
+   align-items: flex-start;
+   gap: 12px;
+   width: 100%;
+   padding: 12px 14px;
+   font-weight: 400;
+   font-size: 16px;
+   text-align: left;
+   border-radius: 10px
+}
+
+.mc-opt .mc-key {
+   flex: none;
+   display: inline-grid;
+   place-items: center;
+   width: 1.8em;
+   height: 1.8em;
+   border-radius: 50%;
+   font: 600 14px "Bricolage Grotesque", system-ui, sans-serif;
+   color: var(--mute);
+   background: var(--line)
+}
+
+.mc-opt .mc-txt {
+   padding-top: .1em;
+   font-family: "Source Serif 4", Georgia, serif
+}
+
+.mc-opt.right {
+   border-color: var(--ok);
+   background: var(--bg);
+   color: var(--ink);
+   opacity: 1;
+   box-shadow: inset 0 0 0 2px var(--ok)
+}
+
+.mc-opt.right .mc-key {
+   color: var(--accInk);
+   background: var(--ok)
+}
+
+.mc-opt.wrong {
+   border-color: var(--bad);
+   box-shadow: inset 0 0 0 2px var(--bad);
+   opacity: 1
+}
+
+.mc-opt.wrong .mc-key {
+   color: var(--accInk);
+   background: var(--bad)
+}
+
+.mc-opt.dim {
+   opacity: .55
+}
+
+.mc-opt:disabled {
+   cursor: default
+}
+
+.mc-fb.ok {
+   color: var(--ok)
+}
+
+.mc-fb.bad {
+   color: var(--bad)
+}
+
+.mc-list {
+   margin: 8px 0;
+   padding-left: 22px
+}
+
+.mc-list li.right {
+   color: var(--ok);
+   font-weight: 600
+}
+
+.mc-prev {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 4px 16px;
+   margin: 2px 0;
+   font-size: 14.5px;
+   color: var(--mute)
+}
+
+.mc-prev .right {
+   color: var(--ok);
+   font-weight: 600
+}
+
+.mc-edit {
+   display: flex;
+   align-items: center;
+   gap: 10px
+}
+
+.mc-edit input[type="text"] {
+   margin: 4px 0
+}
+
+textarea.short {
+   min-height: 48px;
+   height: 48px;
+   resize: none
+}
+
+.rate button.sug {
+   box-shadow: inset 0 0 0 2px currentColor
+}

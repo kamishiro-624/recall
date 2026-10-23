@@ -39,7 +39,7 @@ function startPractice() {
 }
 /* the session moves forward in one place: reviews, then (teach a batch, quiz it) until every new card is learned */
 function nextStep() {
-    var s = sess; s.r = 0; s.mine = ""; s.draft = "";
+    var s = sess; s.r = 0; s.mine = ""; s.draft = ""; s.order = null; s.pick = -1;
     s.rq = s.rq.filter(alive); s.quiz = s.quiz.filter(alive);
     if (s.rq.length) { s.phase = "review"; return }
     if (s.kind === "practice") { s.phase = "done"; return }
@@ -70,7 +70,12 @@ function gradeLearn(c, r) {
     } else { c.step = 0; if (r === 1) { c.miss++; s.res.miss++ } else s.res.shaky++; s.quiz.push(s.quiz.shift()); s.last = "No problem. It comes back so you can try again." }
     s.last = "Last card: " + s.last; nextStep(); save(); render()
 }
-document.addEventListener("keydown", function (e) { if (tab === "study" && sess && sess.r && sess.cb && /^[123]$/.test(e.key) && e.target.tagName !== "TEXTAREA" && e.target.tagName !== "INPUT") sess.cb(sess.cur, +e.key) });
+document.addEventListener("keydown", function (e) {
+    if (tab !== "study" || !sess || !sess.cb || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+    var c = sess.cur;
+    if (c && kind(c) === "choice") { if (!sess.r && /^[1-9]$/.test(e.key)) pickChoice(+e.key - 1); else if (sess.r && e.key === "Enter" && e.target.tagName !== "BUTTON") finishChoice(false); return }
+    if (sess.r && /^[123]$/.test(e.key)) sess.cb(sess.cur, +e.key)
+});
 /* screens */
 function flowHeader(s) {
     var steps = [], done, rem = remaining(s), pct;
@@ -84,21 +89,49 @@ function flowHeader(s) {
     return '<div class="fl-head"><ol class="fl-steps">' + steps.map(function (x, i) { return '<li class="' + (x.on ? "on" : x.ok ? "ok" : "") + '"' + (x.on ? ' aria-current="step"' : "") + '><b>' + (x.ok ? "\u2713" : i + 1) + '</b> ' + x.n + ' <span>' + x.t + '</span></li>' }).join("") + '</ol><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-label="Session progress"><i style="width:' + pct + '%"></i></div><div class="fl-meta"><span>' + (s.phase === "done" ? "Finished" : rem + (rem === 1 ? " card left" : " cards left")) + '</span><button class="sm" id="pz" type="button">' + (s.phase === "done" ? "Back to Today" : "Pause and go back") + '</button></div></div>'
 }
 function wireHead(v) { var p = $("#pz", v); if (p) p.onclick = function () { if (sess && sess.phase === "done") sess = null; tab = "dash"; render() } }
+/* short answers: when the expected answer is a word or short phrase, the typed answer is checked for the student (they can still override) */
+function sNorm(s) { return String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\b(the|a|an)\b/g, " ").replace(/\s+/g, " ").trim() }
+function lev(a, b) { var d = [], i, j; for (i = 0; i <= a.length; i++) { d[i] = [i] } for (j = 1; j <= b.length; j++)d[0][j] = j; for (i = 1; i <= a.length; i++)for (j = 1; j <= b.length; j++)d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length] }
+function nearly(t, e) { if (!t || !e) return false; if (t === e) return true; var n = Math.max(t.length, e.length); return lev(t, e) <= (n >= 9 ? 2 : n >= 5 ? 1 : 0) }
+function expectedAnswers(c) {
+    if (kind(c) === "fill-in") return clozePlain(c.q).a.split(", ").filter(Boolean);
+    return [String(c.a || "").split("\n")[0].trim()].concat(c.alt || []).filter(Boolean)
+}
+function isShort(c) { var k = kind(c); if (k === "fill-in") return true; if (k !== "text") return false; var a = String(c.a || ""); return a.length > 0 && a.length <= 60 && a.indexOf("\n") < 0 && a.split(/\s+/).length <= 6 }
+function shortMatch(typed, c) {
+    var t = sNorm(typed); if (!t) return false; var ex = expectedAnswers(c).map(sNorm).filter(Boolean); if (!ex.length) return false;
+    if (kind(c) === "fill-in") return ex.every(function (w) { return t.indexOf(w) > -1 || t.split(" ").some(function (x) { return nearly(x, w) }) });
+    return ex.some(function (e) { return nearly(t, e) || (e.length >= 4 && t.indexOf(e) > -1 && t.split(" ").length <= e.split(" ").length + 3) })
+}
 function quizCard(v, c, label, tag, cb) {
     var s = sess; s.cur = c; s.cb = cb;
+    var sh = isShort(c), match = s.r && sh && shortMatch(s.mine, c);
     v.innerHTML = flowHeader(s) + '<div class="panel"><div class="meta ui"><span>' + label + '</span><span>' + tag + '</span></div>' + (s.last ? '<p class="fl-last" role="status">' + esc(s.last) + '</p>' : "") + media(c) + '<p class="q">' + front(c) + '</p>' +
-        (s.r ? '<div class="mine" id="mine"></div><div class="answer">' + back(c) + '</div><p class="hint">How did you do? Be honest: this decides when you see the card again. (keys 1, 2, 3)</p><div class="row rate"><button class="r-miss" data-r="1">1 \u00b7 Missed<small>I didn\'t remember</small></button><button class="r-shaky" data-r="2">2 \u00b7 Shaky<small>Close, or I hesitated</small></button><button class="r-got" data-r="3">3 \u00b7 Got it<small>I knew it</small></button></div>'
-            : '<label for="u">Say it out loud or type what you remember, then check. Guessing counts.</label><textarea id="u" placeholder="Your answer">' + esc(s.draft || "") + '</textarea><div class="row"><button class="primary" id="rv">Show answer</button><span class="hint">Ctrl+Enter also works</span></div>') + '</div>';
+        (s.r ? '<div class="mine" id="mine"></div><div class="answer">' + back(c) + '</div><p class="hint">How did you do? Be honest: this decides when you see the card again. (keys 1, 2, 3)</p><div class="row rate"><button class="r-miss" data-r="1">1 \u00b7 Missed<small>I didn\'t remember</small></button><button class="r-shaky" data-r="2">2 \u00b7 Shaky<small>Close, or I hesitated</small></button><button class="r-got' + (match ? " sug" : "") + '" data-r="3">3 \u00b7 Got it<small>' + (match ? "Your answer matches" : "I knew it") + '</small></button></div>'
+            : '<label for="u">' + (sh ? "Type a word or short phrase, or say it out loud, then check." : "Say it out loud or type what you remember, then check. Guessing counts.") + '</label><textarea id="u" class="' + (sh ? "short" : "") + '" placeholder="' + (sh ? "A word or short phrase" : "Your answer") + '">' + esc(s.draft || "") + '</textarea><div class="row"><button class="primary" id="rv">Show answer</button><span class="hint">' + (sh ? "Enter also works" : "Ctrl+Enter also works") + '</span></div>') + '</div>';
     wireHead(v);
-    if (!s.r) { var u = $("#u"); u.oninput = function () { s.draft = u.value }; u.onkeydown = function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("#rv").click() }; u.focus(); $("#rv").onclick = function () { s.mine = u.value.trim(); s.draft = ""; s.r = 1; render() } }
-    else { $("#mine").textContent = s.mine ? "You wrote: " + s.mine : "No attempt written."; v.querySelectorAll(".rate button").forEach(function (b) { b.onclick = function () { cb(c, +b.dataset.r) } }) }
+    if (!s.r) { var u = $("#u"); u.oninput = function () { s.draft = u.value }; u.onkeydown = function (e) { if (e.key === "Enter" && (sh || e.ctrlKey || e.metaKey) && !e.shiftKey) { e.preventDefault(); $("#rv").click() } }; u.focus(); $("#rv").onclick = function () { s.mine = u.value.trim(); s.draft = ""; s.r = 1; render() } }
+    else { $("#mine").textContent = s.mine ? "You wrote: " + s.mine + (sh ? (match ? "  \u2713 matches" : "  (doesn't match exactly; compare it with the answer)") : "") : "No attempt written."; v.querySelectorAll(".rate button").forEach(function (b) { b.onclick = function () { cb(c, +b.dataset.r) } }) }
+}
+/* multiple choice: tap an answer and it is graded for the student (correct = got it, wrong = missed, "I guessed" = shaky) */
+function pickChoice(k) { var s = sess; if (!s || !s.cur || s.r || !s.order || k < 0 || k >= s.order.length) return; s.pick = s.order[k]; s.r = 1; render() }
+function finishChoice(guessed) { var s = sess, c = s.cur, ok = s.pick === c.ci; s.cb(c, ok ? (guessed ? 2 : 3) : 1) }
+function choiceCard(v, c, label, tag, cb) {
+    var s = sess; s.cur = c; s.cb = cb; if (!s.order) { s.order = shuffle(c.ch.map(function (x, i) { return i })); s.pick = -1 }
+    var done = !!s.r, ok = done && s.pick === c.ci;
+    v.innerHTML = flowHeader(s) + '<div class="panel"><div class="meta ui"><span>' + label + '</span><span>' + tag + '</span></div>' + (s.last ? '<p class="fl-last" role="status">' + esc(s.last) + '</p>' : "") + media(c) + '<p class="q">' + front(c) + '</p>' +
+        '<div class="mc" role="group" aria-label="Answer choices">' + s.order.map(function (idx, k) { return '<button type="button" class="mc-opt' + (done ? (idx === c.ci ? " right" : idx === s.pick ? " wrong" : " dim") : "") + '" data-k="' + k + '"' + (done ? " disabled" : "") + '><span class="mc-key">' + (k + 1) + '</span><span class="mc-txt">' + esc(c.ch[idx]) + '</span></button>' }).join("") + '</div>' +
+        (done ? '<p class="fl-last mc-fb ' + (ok ? "ok" : "bad") + '" role="status"><b>' + (ok ? "Correct." : "Not quite.") + '</b></p><div class="answer">' + back(c) + '</div><div class="row"><button class="primary" id="mcn" type="button">Continue</button>' + (ok ? '<button id="mcg" type="button">I guessed (review it sooner)</button>' : "") + '</div>' : '<p class="hint">Pick the best answer (keys 1 to ' + c.ch.length + ').</p>') + '</div>';
+    wireHead(v);
+    v.querySelectorAll(".mc-opt").forEach(function (b) { b.onclick = function () { pickChoice(+b.dataset.k) } });
+    if (done) { $("#mcn").onclick = function () { finishChoice(false) }; $("#mcn").focus(); if ($("#mcg")) $("#mcg").onclick = function () { finishChoice(true) } }
 }
 function pips(n, of) { var h = ""; for (var i = 0; i < of; i++)h += i < n ? "\u25cf" : "\u25cb"; return '<span class="fl-pips" aria-label="' + n + ' of ' + of + ' correct">' + h + '</span> Right ' + n + ' of ' + of }
 function teachView(v) {
     var s = sess, c = s.batch[s.ti];
     if (!c) { s.quiz = s.quiz.concat(shuffle(s.batch.filter(alive))); s.batch = []; s.phase = "quiz"; s.last = "Now a quick quiz on the new cards. Answer from memory."; return studyView(v) }
     var last = s.ti + 1 >= s.batch.length;
-    v.innerHTML = flowHeader(s) + '<div class="panel"><div class="meta ui"><span>Meet a new card \u00b7 ' + (s.ti + 1) + ' of ' + s.batch.length + '</span><span>' + kind(c) + '</span></div>' + media(c) + '<p class="q">' + front(c) + '</p><div class="answer">' + back(c) + '</div><p class="hint">Read it and say the answer out loud. ' + (last ? "That's the last one: a quick quiz on these cards comes next." : "After the last new card you'll get a quick quiz on them.") + '</p><div class="row"><button class="primary" id="nx">' + (last ? "Start the quick quiz" : "Next card") + '</button></div></div>';
+    v.innerHTML = flowHeader(s) + '<div class="panel"><div class="meta ui"><span>Meet a new card \u00b7 ' + (s.ti + 1) + ' of ' + s.batch.length + '</span><span>' + kind(c) + '</span></div>' + media(c) + '<p class="q">' + front(c) + '</p>' + (kind(c) === "choice" ? '<ul class="mc-list">' + c.ch.map(function (x, i) { return '<li' + (i === c.ci ? ' class="right"' : "") + '>' + esc(x) + (i === c.ci ? " \u2713" : "") + '</li>' }).join("") + '</ul>' : "") + '<div class="answer">' + back(c) + '</div><p class="hint">Read it and say the answer out loud. ' + (last ? "That's the last one: a quick quiz on these cards comes next." : "After the last new card you'll get a quick quiz on them.") + '</p><div class="row"><button class="primary" id="nx">' + (last ? "Start the quick quiz" : "Next card") + '</button></div></div>';
     wireHead(v); $("#nx").focus(); $("#nx").onclick = function () { s.ti++; s.last = ""; render() }
 }
 function doneView(v) {
@@ -116,6 +149,6 @@ function studyView(v) {
     if (s.phase === "quiz" && !s.quiz.length) nextStep();
     if (s.phase === "done") return doneView(v);
     if (s.phase === "teach") return teachView(v);
-    if (s.phase === "review") { var c = s.rq[0], rt = !!s.again[c.id]; return quizCard(v, c, (s.kind === "practice" ? "Practice" : "Review") + (rt ? " \u00b7 second try" : "") + " \u00b7 " + kind(c), s.kind === "practice" ? "" : "Level " + c.box + " of 5", gradeReview) }
-    var q = s.quiz[0]; return quizCard(v, q, "Quick quiz \u00b7 " + kind(q), pips(q.step, S().learnSteps), gradeLearn)
+    if (s.phase === "review") { var c = s.rq[0], rt = !!s.again[c.id]; return (kind(c) === "choice" ? choiceCard : quizCard)(v, c, (s.kind === "practice" ? "Practice" : "Review") + (rt ? " \u00b7 second try" : "") + " \u00b7 " + kind(c), s.kind === "practice" ? "" : "Level " + c.box + " of 5", gradeReview) }
+    var q = s.quiz[0]; return (kind(q) === "choice" ? choiceCard : quizCard)(v, q, "Quick quiz \u00b7 " + kind(q), pips(q.step, S().learnSteps), gradeLearn)
 }

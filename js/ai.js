@@ -1,32 +1,50 @@
 /* AI-written questions. Four providers, chosen in Settings:
    puter = Puter.js (free Puter account, nothing to install, no key), chrome = Chrome's built-in on-device model (no key), gemini = Google Gemini API (free key), claude = Anthropic API (key; no key needed inside Claude).
    Slide/document text is the only thing ever sent, and only to the provider you pick (nothing is sent for chrome). */
-var AI_FMT_LINES = "Output format: one JSON object per line and nothing else (no code fences, no commentary, no line breaks inside a value):\n{\"q\": \"question or sentence\", \"a\": \"model answer\", \"src\": \"title of the main slide or section it draws on\", \"note\": \"\"}";
-var AI_FMT_JSON = "Output format: a single JSON object {\"cards\": [ ... ]}. Each card is {\"q\": \"question or sentence\", \"a\": \"model answer\", \"src\": \"title of the main slide or section it draws on\", \"note\": \"\"}.";
-function aiSystem(json) {
-  return [
+var AI_FORMS = {
+  mc: "{\"type\": \"mc\", \"q\": \"question\", \"correct\": \"the correct choice\", \"wrong\": [\"wrong choice\", \"wrong choice\", \"wrong choice\"], \"a\": \"1-2 sentence explanation of why the correct choice is right\", \"src\": \"title of the main slide or section\", \"note\": \"\"}",
+  short: "{\"type\": \"short\", \"q\": \"question\", \"a\": \"the answer: one word or a short phrase\", \"alt\": [\"other accepted wording\"], \"src\": \"title of the main slide or section\", \"note\": \"\"}",
+  explain: "{\"type\": \"explain\", \"q\": \"question\", \"a\": \"model answer\", \"src\": \"title of the main slide or section\", \"note\": \"\"}",
+  cloze: "{\"type\": \"cloze\", \"q\": \"a sentence with {{c1::hidden words}}\", \"a\": \"\", \"src\": \"title of the main slide or section\", \"note\": \"\"}"
+};
+var AI_STYLES = {
+  mc: { label: "Mostly multiple choice (recommended)", types: ["mc", "short"], mix: "Make about four out of five cards multiple choice (type \"mc\") and the rest short answer (type \"short\")." },
+  mix: { label: "Half multiple choice, half short answer", types: ["mc", "short", "cloze"], mix: "Make about half of the cards multiple choice (type \"mc\") and half short answer (type \"short\"), with an occasional fill-in-the-blank (type \"cloze\")." },
+  short: { label: "Short answers (a word or phrase)", types: ["short", "cloze"], mix: "Make every card a short-answer card (type \"short\"), with an occasional fill-in-the-blank (type \"cloze\")." },
+  explain: { label: "Written explanations (longer answers)", types: ["explain", "cloze"], mix: "Make every card a written-explanation card (type \"explain\"): the answer is a model answer of 1 to 3 sentences. At most one card in five may be a fill-in-the-blank (type \"cloze\")." }
+};
+function aiSystem(json, style) {
+  var st = AI_STYLES[style] || AI_STYLES.mc, lines = [
     "You write study cards for a classroom spaced-repetition app. You are given the text of a teacher's slides or notes (titles, bullets, speaker notes). The slides are only SOURCE MATERIAL: turn the ideas behind them into questions that make students think, so that learning the cards means understanding the topic, not memorizing the slides.",
     "",
-    "Write cards that:",
+    "Write questions that:",
     "- ask WHY or HOW something happens (mechanisms, cause and effect)",
     "- compare and contrast related ideas",
     "- connect two ideas or stages and show how one depends on the other",
     "- predict what happens if a condition changes, or explain an unexpected result",
     "- apply the idea to a new, concrete scenario the slides did not mention",
     "- interpret an experiment or graph described in words",
-    "- sparingly (at most one card in five) check a key term with a fill-in-the-blank card",
+    "",
+    "Card types. " + st.mix
+  ];
+  if (st.types.indexOf("mc") > -1) lines.push("- mc (multiple choice): one question, one correct choice and exactly three wrong choices. The wrong choices must be plausible: base them on real misconceptions or on ideas that are true but answer a different question. Keep all four choices similar in length and style, never make the correct one the longest, and never use \"all of the above\", \"none of the above\" or \"both A and B\". Choices are short (under 12 words). The question must be answerable without seeing the choices. Do not give away the answer in the wording of the question. Put the explanation in \"a\".");
+  if (st.types.indexOf("short") > -1) lines.push("- short (short answer): the answer is ONE word or a short phrase of at most five words, and the question must have one clear answer (list other accepted wordings in \"alt\"). Ask for a term, a name, a quantity, a direction (increase or decrease) or a cause, not a description.");
+  if (st.types.indexOf("explain") > -1) lines.push("- explain: the answer is a short model answer (1 to 3 sentences) that includes the reasoning.");
+  if (st.types.indexOf("cloze") > -1) lines.push("- cloze (fill-in-the-blank): a complete sentence with the key term wrapped like {{c1::hidden words}}, with enough context to be answerable.");
+  lines = lines.concat([
     "",
     "Rules:",
     "- Every card must make sense on its own. Never mention 'the slide', 'the presentation' or slide order. Put any context the student needs into the question.",
-    "- Do not simply turn a bullet into a question. If the answer could be copied word for word from one slide line, rewrite the question so it needs explanation or reasoning.",
-    "- Answers are short model answers (1 to 3 sentences) that include the reasoning, not just a single word, so a student can judge their own response.",
+    "- Do not simply turn a bullet into a question. If the answer could be copied word for word from one slide line, rewrite the question so it needs reasoning.",
     "- Be accurate. If the slides contain a mistake or an oversimplification, write the correct version and put a short teacher note in \"note\" (for example: Slide says X; the accurate statement is Y). Otherwise leave note empty.",
     "- Cover the whole range of the material. Never repeat or rephrase a question that was already written.",
     "- Pitch the wording to the level in the teacher's guidance. If there is none, assume a high-school class.",
-    "- Plain text only, no markdown. For a fill-in card, write a complete sentence with the hidden words wrapped like {{c1::hidden words}}, with enough context to be answerable; \"a\" may be empty or one extra line.",
-    "",
-    json ? AI_FMT_JSON : AI_FMT_LINES
-  ].join("\n")
+    "- Plain text only, no markdown.",
+    ""
+  ]);
+  var forms = st.types.map(function (t) { return AI_FORMS[t] });
+  lines.push(json ? "Output format: a single JSON object {\"cards\": [ ... ]} where each card is one of these shapes:" : "Output format: one JSON object per line and nothing else (no code fences, no commentary, no line breaks inside a value), each in one of these shapes:");
+  return lines.concat(forms).join("\n")
 }
 var AI_GEM_LIST = [];
 var AI_PROV = {
@@ -64,9 +82,21 @@ function aiParse(text) {
   else text.split(/\r?\n/).forEach(function (l) { l = l.trim().replace(/,$/, ""); if (l.charAt(0) !== "{") return; try { list.push(JSON.parse(l)) } catch (e) { } });
   var out = [];
   list.forEach(function (o) {
-    if (!o) return; var q = String(o.q || "").trim(), a = String(o.a || "").trim();
-    if (!q || (!a && !/\{\{c\d+::/.test(q))) return;
-    out.push({ q: q, a: a, src: String(o.src || ""), note: String(o.note || "").trim(), ai: true })
+    if (!o) return; var q = String(o.q || "").trim(), a = String(o.a || "").trim(), type = String(o.type || "").toLowerCase();
+    if (!q) return;
+    var card = { q: q, a: a, src: String(o.src || ""), note: String(o.note || "").trim(), ai: true };
+    var cor = String(o.correct || "").trim(), wr = Array.isArray(o.wrong) ? o.wrong : (Array.isArray(o.choices) ? o.choices : []);
+    if (Array.isArray(o.choices) && /^[A-Da-d]$/.test(cor)) cor = String(o.choices["ABCD".indexOf(cor.toUpperCase())] || "").trim();
+    if (type === "mc" || (cor && wr.length)) {
+      var seen = {}; seen[cor.toLowerCase()] = 1;
+      wr = wr.map(function (x) { return String(x).trim() }).filter(function (x) { if (!x || seen[x.toLowerCase()]) return false; seen[x.toLowerCase()] = 1; return true }).slice(0, 4);
+      if (!cor || wr.length < 2) return;
+      var opts = shuffle([cor].concat(wr)); card.ch = opts; card.ci = opts.indexOf(cor); card.a = cor + (a ? "\n" + a : "")
+    } else {
+      if (!a && !/\{\{c\d+::/.test(q)) return;
+      if (Array.isArray(o.alt) && o.alt.length) card.alt = o.alt.map(String).map(function (x) { return x.trim() }).filter(Boolean).slice(0, 5)
+    }
+    out.push(card)
   });
   return out
 }
@@ -144,7 +174,7 @@ async function aiChromeSession(system, status) {
 }
 async function aiChromeCall(sys, user, o) {
   var ses = await aiChromeSession(sys, o.status);
-  var schema = { type: "object", properties: { cards: { type: "array", items: { type: "object", properties: { q: { type: "string" }, a: { type: "string" }, src: { type: "string" }, note: { type: "string" } }, required: ["q", "a"] } } }, required: ["cards"] };
+  var schema = { type: "object", properties: { cards: { type: "array", items: { type: "object", properties: { type: { type: "string" }, q: { type: "string" }, a: { type: "string" }, correct: { type: "string" }, wrong: { type: "array", items: { type: "string" } }, alt: { type: "array", items: { type: "string" } }, src: { type: "string" }, note: { type: "string" } }, required: ["type", "q"] } } }, required: ["cards"] };
   try {
     if (o.status) o.status("Writing questions…");
     try { return await ses.prompt(user, { responseConstraint: schema }) }
@@ -201,7 +231,7 @@ function aiCoverage(sources, cards) {
   return res
 }
 async function aiGenerate(plan, o) {
-  var pk = aiProvider(), P = AI_PROV[pk], sys = aiSystem(pk === "chrome"), report = o.report || function () { }, stop = o.cancelled || function () { return false }, jobs = [], failed = null;
+  var pk = aiProvider(), P = AI_PROV[pk], sys = aiSystem(pk === "chrome", o.style), report = o.report || function () { }, stop = o.cancelled || function () { return false }, jobs = [], failed = null;
   o.status = o.status || function (t, pct) { if (typeof pct === "number" || /sign-in|download|loading/i.test(t || "")) report(t, pct, true) };
   plan.items.forEach(function (it) {
     if (!it.want) return; var ch = aiChunks(it.secs, P.chunk), tl = ch.reduce(function (a, c) { return a + c.len }, 0) || 1;
@@ -238,6 +268,7 @@ function aiControls() {
   return '<p class="hint">Reads each lesson you added and writes questions about the ideas behind it (why, how, compare, predict, apply), not just the slide wording. With more than one lesson, the questions are blended and some connect the lessons. Provider: ' + esc(P.short) + '. <button class="sm" id="aic" type="button">Change in Settings</button></p>' +
     '<label for="aiN">How many questions</label><select id="aiN">' + [["auto", "Automatic (recommended)"], ["15", "About 15"], ["30", "About 30"], ["45", "About 45"], ["60", "About 60"]].map(function (x) { return '<option value="' + x[0] + '"' + (n === x[0] ? " selected" : "") + '>' + x[1] + '</option>' }).join("") + '</select>' +
     '<p class="hint" id="aiplan" style="margin:4px 0 0">' + aiPlanText(aiPlanNow()) + '</p>' +
+    '<label for="aiS">Question style</label><select id="aiS">' + Object.keys(AI_STYLES).map(function (k) { return '<option value="' + k + '"' + ((imp.aiS || "mc") === k ? " selected" : "") + '>' + AI_STYLES[k].label + '</option>' }).join("") + '</select><p class="hint" style="margin:4px 0 0">Multiple choice is graded for the student; short answers are checked automatically. Both are quicker to answer than a paragraph.</p>' +
     '<label for="aiG">Level or focus (optional)</label><input type="text" id="aiG" placeholder="e.g. 9th grade biology; stress how the two stages connect" value="' + esc(imp.aiG || "") + '">' +
     '<div class="row"><button class="primary" id="aib" type="button">' + (has ? "Write a new set" : "Write questions with AI") + '</button><button id="aix" type="button" hidden>Stop</button></div>' +
     progHTML("aiprog", "") + '<p class="hint" id="aim" role="status">' + esc(imp.aiMsg || "") + '</p>' + aiCovHTML()
@@ -252,14 +283,14 @@ function aiWire(v) {
   $("#aix").onclick = function () { imp.aiCancel = true; $("#aix").disabled = true; rep("Stopping after the current request\u2026", undefined, true) };
   async function run(fill) {
     if (imp.aiRunning) return;
-    imp.aiN = $("#aiN").value; imp.aiG = $("#aiG").value.trim(); imp.aiRunning = true; imp.aiCancel = false; imp.aiPct = null; imp.aiMsg = "";
+    imp.aiN = $("#aiN").value; imp.aiS = $("#aiS").value; imp.aiG = $("#aiG").value.trim(); imp.aiRunning = true; imp.aiCancel = false; imp.aiPct = null; imp.aiMsg = "";
     var plan = aiPlanNow();
     if (fill && imp.aiCov) {
       var by = {}; imp.aiCov.missing.forEach(function (m) { (by[m.file] = by[m.file] || []).push(m.sec) });
       plan = { items: Object.keys(by).map(function (f) { return { name: f, secs: by[f], want: Math.max(2, Math.min(30, Math.ceil(by[f].length * 0.8))) } }), bridge: 0, total: 0 }
     }
     b.disabled = true; var fb = $("#aif"); if (fb) fb.disabled = true; $("#aix").hidden = false; $("#aix").disabled = false; var m = $("#aim"); m.textContent = ""; m.className = "hint"; rep("Getting ready\u2026", null, true);
-    var stopTimer = progTimer("aiprog"), o = { count: plan.total, guide: imp.aiG, report: rep, cancelled: function () { return imp.aiCancel } };
+    var stopTimer = progTimer("aiprog"), o = { count: plan.total, guide: imp.aiG, style: imp.aiS || "mc", report: rep, cancelled: function () { return imp.aiCancel } };
     try {
       var cards = await aiGenerate(plan, o);
       stopTimer(); imp.aiRunning = false;
