@@ -45,12 +45,12 @@ function nextStep() {
     if (s.kind === "practice") { s.phase = "done"; return }
     if (s.pool.length && (s.teachNext || !s.quiz.length)) {
         s.teachNext = false; s.batch = s.pool.splice(0, Math.max(1, S().lessonBatch));
-        s.batch.forEach(function (c) { c.stage = "learning"; c.step = 0; lg().l++ }); s.taught += s.batch.length; s.phase = "teach"; s.ti = 0; save(); return
+        s.batch.forEach(function (c) { c.stage = "learning"; c.step = 0; c.u = Date.now(); lg().l++ }); s.taught += s.batch.length; s.phase = "teach"; s.ti = 0; save(); return
     }
     s.phase = s.quiz.length ? "quiz" : "done"
 }
 function gradeReview(c, r) {
-    var s = sess, retry = !!s.again[c.id], sched = s.kind === "today" && !retry, info = "";
+    var s = sess, retry = !!s.again[c.id], sched = s.kind === "today" && !retry, info = ""; c.u = Date.now();
     if (sched) {
         var L = lg(); L.r++; c.seen++;
         if (r === 3) { var b0 = c.box; c.box = Math.min(5, c.box + 1); L.c++; if (c.box > b0) s.up++ } else if (r === 1) { c.box = 1; c.miss++ }
@@ -62,7 +62,7 @@ function gradeReview(c, r) {
     s.last = "Last card: " + info; nextStep(); save(); render()
 }
 function gradeLearn(c, r) {
-    var s = sess; lg().q++;
+    var s = sess; lg().q++; c.u = Date.now();
     if (r === 3) {
         c.step++; s.res.got++;
         if (c.step >= S().learnSteps) { c.stage = "review"; c.box = 1; c.due = Date.now() + 4 * HOUR; s.grads++; s.quiz.shift(); s.last = "Learned! Its first review is " + whenText(c.due) + "." }

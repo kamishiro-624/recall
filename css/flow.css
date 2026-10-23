@@ -1,87 +1,453 @@
 /* Study flow: Today card, session header, steps, progress, summary, add-cards switch, advanced settings.
    Loaded after styles.css and built on its theme tokens. */
-.wfull { grid-column: 1 / -1 }
-.fl-hero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 20px; margin-bottom: 14px }
-.fl-title { font: 700 22px/1.25 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif }
-.fl-sub { margin: 4px 0 0; color: var(--mute) }
-.fl-cta { font-size: 17px; padding: 12px 22px }
-.fl-prog .meta { margin-bottom: 4px }
-.fl-foot { margin-top: 14px; justify-content: center }
+.wfull {
+   grid-column: 1 / -1
+}
+
+.fl-hero {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   justify-content: space-between;
+   gap: 14px 20px;
+   margin-bottom: 14px
+}
+
+.fl-title {
+   font: 700 22px/1.25 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif
+}
+
+.fl-sub {
+   margin: 4px 0 0;
+   color: var(--mute)
+}
+
+.fl-cta {
+   font-size: 17px;
+   padding: 12px 22px
+}
+
+.fl-prog .meta {
+   margin-bottom: 4px
+}
+
+.fl-foot {
+   margin-top: 14px;
+   justify-content: center
+}
 
 /* Session header */
-.fl-head { margin: 0 0 12px }
-.fl-steps { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0 0 10px; padding: 0 }
-.fl-steps li { display: inline-flex; align-items: center; gap: .5em; padding: 6px 12px; border-radius: 999px; font: 500 14.5px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif; color: var(--mute); background: var(--surface); border: 1px solid var(--line) }
-.fl-steps li b { display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 50%; font-size: .85em; color: var(--mute); background: var(--line) }
-.fl-steps li span { font-size: .92em }
-.fl-steps li.on { color: var(--ink); border-color: var(--acc) }
-.fl-steps li.on b { color: var(--accInk); background: var(--acc) }
-.fl-steps li.ok { color: var(--ink) }
-.fl-steps li.ok b { color: var(--accInk); background: var(--ok) }
-.fl-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 14px; color: var(--mute) }
-.fl-last { margin: 8px 0 10px; padding: 8px 12px; font-size: 15px; color: var(--ink); background: var(--bg); border-radius: 8px }
-.fl-pips { letter-spacing: .12em; color: var(--acc) }
-.rate button small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--mute) }
+.fl-head {
+   margin: 0 0 12px
+}
+
+.fl-steps {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 8px;
+   list-style: none;
+   margin: 0 0 10px;
+   padding: 0
+}
+
+.fl-steps li {
+   display: inline-flex;
+   align-items: center;
+   gap: .5em;
+   padding: 6px 12px;
+   border-radius: 999px;
+   font: 500 14.5px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+   color: var(--mute);
+   background: var(--surface);
+   border: 1px solid var(--line)
+}
+
+.fl-steps li b {
+   display: inline-grid;
+   place-items: center;
+   width: 1.6em;
+   height: 1.6em;
+   border-radius: 50%;
+   font-size: .85em;
+   color: var(--mute);
+   background: var(--line)
+}
+
+.fl-steps li span {
+   font-size: .92em
+}
+
+.fl-steps li.on {
+   color: var(--ink);
+   border-color: var(--acc)
+}
+
+.fl-steps li.on b {
+   color: var(--accInk);
+   background: var(--acc)
+}
+
+.fl-steps li.ok {
+   color: var(--ink)
+}
+
+.fl-steps li.ok b {
+   color: var(--accInk);
+   background: var(--ok)
+}
+
+.fl-meta {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-top: 6px;
+   font-size: 14px;
+   color: var(--mute)
+}
+
+.fl-last {
+   margin: 8px 0 10px;
+   padding: 8px 12px;
+   font-size: 15px;
+   color: var(--ink);
+   background: var(--bg);
+   border-radius: 8px
+}
+
+.fl-pips {
+   letter-spacing: .12em;
+   color: var(--acc)
+}
+
+.rate button small {
+   display: block;
+   margin-top: 2px;
+   font-size: 12px;
+   font-weight: 400;
+   color: var(--mute)
+}
 
 /* Summary */
-.fl-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 }
-.fl-stats div { flex: 1 1 120px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; text-align: center }
-.fl-stats b { display: block; font: 700 30px/1.1 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif }
-.fl-stats span { font-size: 14px; color: var(--mute) }
+.fl-stats {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 12px;
+   margin: 12px 0
+}
+
+.fl-stats div {
+   flex: 1 1 120px;
+   padding: 12px 14px;
+   border: 1px solid var(--line);
+   border-radius: 12px;
+   text-align: center
+}
+
+.fl-stats b {
+   display: block;
+   font: 700 30px/1.1 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif
+}
+
+.fl-stats span {
+   font-size: 14px;
+   color: var(--mute)
+}
 
 /* Add cards switch */
-.seg { display: flex; margin: 0 0 14px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 12px }
-.seg button { flex: 1; margin: 0; padding: 12px 14px; font-weight: 600; background: transparent; border: 0; border-radius: 0 }
-.seg button + button { border-left: 1px solid var(--line) }
-.seg button.on { color: var(--accInk); background: var(--acc) }
-.seg button:not(.on):hover { background: var(--bg) }
+.seg {
+   display: flex;
+   margin: 0 0 14px;
+   overflow: hidden;
+   background: var(--surface);
+   border: 1px solid var(--line);
+   border-radius: 12px
+}
+
+.seg button {
+   flex: 1;
+   margin: 0;
+   padding: 12px 14px;
+   font-weight: 600;
+   background: transparent;
+   border: 0;
+   border-radius: 0
+}
+
+.seg button+button {
+   border-left: 1px solid var(--line)
+}
+
+.seg button.on {
+   color: var(--accInk);
+   background: var(--acc)
+}
+
+.seg button:not(.on):hover {
+   background: var(--bg)
+}
 
 /* Advanced settings */
-details.adv > summary { cursor: pointer; padding: 4px 0; font: 700 17px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif; list-style: none }
-details.adv > summary::-webkit-details-marker { display: none }
-details.adv > summary::before { content: "\25b8"; display: inline-block; width: 1.2em; transition: transform .15s }
-details.adv[open] > summary::before { transform: rotate(90deg) }
+details.adv>summary {
+   cursor: pointer;
+   padding: 4px 0;
+   font: 700 17px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+   list-style: none
+}
+
+details.adv>summary::-webkit-details-marker {
+   display: none
+}
+
+details.adv>summary::before {
+   content: "\25b8";
+   display: inline-block;
+   width: 1.2em;
+   transition: transform .15s
+}
+
+details.adv[open]>summary::before {
+   transform: rotate(90deg)
+}
 
 /* Progress bars (js/progress.js) */
-.load { margin: 12px 0 }
-.load[hidden] { display: none }
-.load-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; color: var(--mute) }
-.load-label { color: var(--ink) }
-.load-side { display: inline-flex; gap: 10px; white-space: nowrap; font-variant-numeric: tabular-nums }
-.bar.ind i { width: 35%; animation: load-sweep 1.3s ease-in-out infinite }
-.bar.busy { background-image: repeating-linear-gradient(45deg, transparent 0 10px, rgba(127, 127, 127, .22) 10px 20px); background-size: 28px 28px; animation: load-stripes 1s linear infinite }
-.load.done .bar i { background: var(--ok) }
-@keyframes load-sweep { 0% { transform: translateX(-100%) } 100% { transform: translateX(300%) } }
-@keyframes load-stripes { to { background-position: 28px 0 } }
-@media (prefers-reduced-motion: reduce) { .bar.ind i { animation: none; width: 100%; opacity: .45 } .bar.busy { animation: none } }
-.fl-err { color: var(--bad) }
-.fl-err:empty { display: none }
+.load {
+   margin: 12px 0
+}
+
+.load[hidden] {
+   display: none
+}
+
+.load-top {
+   display: flex;
+   justify-content: space-between;
+   align-items: baseline;
+   gap: 12px;
+   font-size: 14px;
+   color: var(--mute)
+}
+
+.load-label {
+   color: var(--ink)
+}
+
+.load-side {
+   display: inline-flex;
+   gap: 10px;
+   white-space: nowrap;
+   font-variant-numeric: tabular-nums
+}
+
+.bar.ind i {
+   width: 35%;
+   animation: load-sweep 1.3s ease-in-out infinite
+}
+
+.bar.busy {
+   background-image: repeating-linear-gradient(45deg, transparent 0 10px, rgba(127, 127, 127, .22) 10px 20px);
+   background-size: 28px 28px;
+   animation: load-stripes 1s linear infinite
+}
+
+.load.done .bar i {
+   background: var(--ok)
+}
+
+@keyframes load-sweep {
+   0% {
+      transform: translateX(-100%)
+   }
+
+   100% {
+      transform: translateX(300%)
+   }
+}
+
+@keyframes load-stripes {
+   to {
+      background-position: 28px 0
+   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .bar.ind i {
+      animation: none;
+      width: 100%;
+      opacity: .45
+   }
+
+   .bar.busy {
+      animation: none
+   }
+}
+
+.fl-err {
+   color: var(--bad)
+}
+
+.fl-err:empty {
+   display: none
+}
 
 /* Add cards: loaded files */
-.files { list-style: none; margin: 8px 0 0; padding: 0 }
-.file { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; margin-bottom: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px }
-.file-ic { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font: 700 14px "Bricolage Grotesque", system-ui, sans-serif; color: var(--accInk); background: var(--mute) }
-.file.ok .file-ic { background: var(--ok) }
-.file.err .file-ic { background: var(--bad) }
-.file.warn .file-ic { background: var(--mid) }
-.file-body { flex: 1; min-width: 0 }
-.file-name { font-weight: 600; word-break: break-word }
-.file-note { font-size: 15px; color: var(--mute) }
-.file.err .file-note { color: var(--bad) }
-.file-more summary { cursor: pointer; margin-top: 4px; font-size: 14px; color: var(--acc) }
-.file-more ol { max-height: 160px; margin: 6px 0 0; padding-left: 22px; overflow: auto; font-size: 14px }
+.files {
+   list-style: none;
+   margin: 8px 0 0;
+   padding: 0
+}
+
+.file {
+   display: flex;
+   gap: 12px;
+   align-items: flex-start;
+   padding: 10px 12px;
+   margin-bottom: 8px;
+   background: var(--bg);
+   border: 1px solid var(--line);
+   border-radius: 10px
+}
+
+.file-ic {
+   flex: none;
+   display: grid;
+   place-items: center;
+   width: 26px;
+   height: 26px;
+   border-radius: 50%;
+   font: 700 14px "Bricolage Grotesque", system-ui, sans-serif;
+   color: var(--accInk);
+   background: var(--mute)
+}
+
+.file.ok .file-ic {
+   background: var(--ok)
+}
+
+.file.err .file-ic {
+   background: var(--bad)
+}
+
+.file.warn .file-ic {
+   background: var(--mid)
+}
+
+.file-body {
+   flex: 1;
+   min-width: 0
+}
+
+.file-name {
+   font-weight: 600;
+   word-break: break-word
+}
+
+.file-note {
+   font-size: 15px;
+   color: var(--mute)
+}
+
+.file.err .file-note {
+   color: var(--bad)
+}
+
+.file-more summary {
+   cursor: pointer;
+   margin-top: 4px;
+   font-size: 14px;
+   color: var(--acc)
+}
+
+.file-more ol {
+   max-height: 160px;
+   margin: 6px 0 0;
+   padding-left: 22px;
+   overflow: auto;
+   font-size: 14px
+}
 
 /* Add cards: choose a way to make cards */
-.choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 }
-@media (max-width: 620px) { .choice { grid-template-columns: 1fr } }
-.choice button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px 16px; font-weight: 400; text-align: left; border-radius: 12px }
-.choice button b { font-size: 16px }
-.choice button span { font-size: 14px; line-height: 1.4; color: var(--mute) }
-.choice button.on { color: var(--ink); background: var(--surface); border: 2px solid var(--acc); padding: 13px 15px }
-.choice button.on b::before { content: "\2713  "; color: var(--acc) }
+.choice {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 10px;
+   margin: 12px 0
+}
+
+@media (max-width: 620px) {
+   .choice {
+      grid-template-columns: 1fr
+   }
+}
+
+.choice button {
+   display: flex;
+   flex-direction: column;
+   align-items: flex-start;
+   gap: 4px;
+   padding: 14px 16px;
+   font-weight: 400;
+   text-align: left;
+   border-radius: 12px
+}
+
+.choice button b {
+   font-size: 16px
+}
+
+.choice button span {
+   font-size: 14px;
+   line-height: 1.4;
+   color: var(--mute)
+}
+
+.choice button.on {
+   color: var(--ink);
+   background: var(--surface);
+   border: 2px solid var(--acc);
+   padding: 13px 15px
+}
+
+.choice button.on b::before {
+   content: "\2713  ";
+   color: var(--acc)
+}
 
 /* Review list: search, filters, full text */
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px }
-.toolbar > * { flex: 1 1 170px; min-width: 0; margin: 0 }
-.toolbar > input[type="search"] { flex: 2 1 220px }
-.review .item .body div { overflow: visible; white-space: normal; text-overflow: clip }
+.toolbar {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 8px;
+   margin: 12px 0 4px
+}
+
+.toolbar>* {
+   flex: 1 1 170px;
+   min-width: 0;
+   margin: 0
+}
+
+.toolbar>input[type="search"] {
+   flex: 2 1 220px
+}
+
+.review .item .body div {
+   overflow: visible;
+   white-space: normal;
+   text-overflow: clip
+}
+
+/* Account */
+.acct-in {
+   font-weight: 600
+}
+
+.fl-note {
+   margin: 12px 0 0;
+   padding: 10px 12px;
+   background: var(--bg);
+   border-radius: 8px
+}
+
+#syncbox .load {
+   margin: 0 0 12px
+}

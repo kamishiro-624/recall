@@ -28,7 +28,7 @@ function addView(v) {
     var dup = findDup(form, deckId(form.deck || dn), form.id);
     if (dup && !form.ok) { form.ok = true; $("#sv").textContent = form.id ? "Save anyway" : "Add anyway"; say("This deck already has a card with the same prompt" + (dup.a.trim() !== form.a.trim() ? " (its answer: \u201c" + dup.a.slice(0, 60) + "\u201d)" : "") + ". Edit this one, or choose the button again to " + (form.id ? "save" : "add") + " it anyway."); return }
     var d = ensureDeck(form.deck || dn);
-    if (form.id) { var c = DB.cards.find(function (x) { return x.id === form.id }); if (c) { c.q = form.q; c.a = form.a; c.img = form.img; c.aud = form.aud; c.deck = d } form = blank(); tab = "lib"; save(); render(); return }
+    if (form.id) { var c = DB.cards.find(function (x) { return x.id === form.id }); if (c) { c.q = form.q; c.a = form.a; c.img = form.img; c.aud = form.aud; c.deck = d; c.u = Date.now() } form = blank(); tab = "lib"; save(); render(); return }
     DB.cards.push(mk(form, d)); save(); form = blank(); form.deck = deckName(d); render(); say("Card added. It will appear as a new card in your next study session.")
   };
   if ($("#cx")) $("#cx").onclick = function () { form = blank(); tab = "lib"; render() }

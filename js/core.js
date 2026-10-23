@@ -12,10 +12,14 @@ function toast(t) { var e = $("#toast"); if (!e) return; e.textContent = t; e.hi
 /* storage: IndexedDB so images and audio fit */
 function idb() { return new Promise(function (res, rej) { var r = indexedDB.open("recall", 1); r.onupgradeneeded = function () { r.result.createObjectStore("kv") }; r.onsuccess = function () { res(r.result) }; r.onerror = function () { rej(r.error) } }) }
 async function loadDB() { try { var d = await idb(); var v = await new Promise(function (res) { var q = d.transaction("kv").objectStore("kv").get("db"); q.onsuccess = function () { res(q.result) }; q.onerror = function () { res(null) } }); if (v && v.cards) DB = v } catch (e) { } migrate() }
-var tmr; function save() { clearTimeout(tmr); tmr = setTimeout(async function () { try { var d = await idb(); d.transaction("kv", "readwrite").objectStore("kv").put(DB, "db") } catch (e) { } }, 250) }
+var tmr;
+async function saveLocalNow() { try { var d = await idb(); d.transaction("kv", "readwrite").objectStore("kv").put(DB, "db") } catch (e) { } }
+function save() { DB.updated = Date.now(); clearTimeout(tmr); tmr = setTimeout(saveLocalNow, 250); if (typeof cloudDirty === "function") cloudDirty() }
+/* deleted cards and decks are remembered (for 90 days) so a deletion on one device also reaches the others */
+function markGone(ids) { DB.deleted = DB.deleted || {}; var t = Date.now(); ids.forEach(function (i) { DB.deleted[i] = t }) }
 function migrate() {
-    DB.settings = DB.settings || {}; if (DB.settings.aiKey && !DB.settings.aiProvider) DB.settings.aiProvider = "claude"; DB.settings = Object.assign({}, DEFAULTS, DB.settings); DB.log = DB.log || {}; DB.decks = DB.decks || []; if (!DB.cur) DB.cur = "all";
-    DB.cards.forEach(function (c) { if (!c.stage) c.stage = "review"; c.miss = c.miss || 0; c.step = c.step || 0 }); normWidgets()
+    DB.settings = DB.settings || {}; if (DB.settings.aiKey && !DB.settings.aiProvider) DB.settings.aiProvider = "claude"; DB.settings = Object.assign({}, DEFAULTS, DB.settings); DB.log = DB.log || {}; DB.deleted = DB.deleted || {}; DB.decks = DB.decks || []; if (!DB.cur) DB.cur = "all";
+    DB.cards.forEach(function (c) { if (!c.stage) c.stage = "review"; c.miss = c.miss || 0; c.step = c.step || 0; c.u = c.u || 0 }); normWidgets()
 }
 /* settings, daily log, stages */
 function S() { return DB.settings }
@@ -34,7 +38,7 @@ function lessonCount() { return inStage("learning").length + Math.min(inStage("n
 function deckId(n) { n = (n || "").trim().toLowerCase(); var d = DB.decks.find(function (x) { return x.name.toLowerCase() === n }); return d ? d.id : null }
 function ensureDeck(n) { n = (n || "").trim() || "My deck"; var id = deckId(n); if (!id) { id = uid(); DB.decks.push({ id: id, name: n }) } return id }
 function deckName(id) { var d = DB.decks.find(function (x) { return x.id === id }); return d ? d.name : "" }
-function mk(o, deck) { return { id: uid(), deck: deck, q: o.q || "", a: o.a || "", img: o.img || "", aud: o.aud || "", box: o.box || 1, due: o.due || 0, seen: o.seen || 0, stage: o.stage || "new", step: 0, miss: o.miss || 0 } }
+function mk(o, deck) { return { id: uid(), deck: deck, q: o.q || "", a: o.a || "", img: o.img || "", aud: o.aud || "", box: o.box || 1, due: o.due || 0, seen: o.seen || 0, stage: o.stage || "new", step: 0, miss: o.miss || 0, u: Date.now() } }
 function kind(c) { return /\{\{c\d+::/.test(c.q) ? "fill-in" : c.img ? "image" : c.aud ? "audio" : "text" }
 function stageLabel(c) { return c.stage === "review" ? "box " + c.box : c.stage }
 function clozeHTML(q, show) { return esc(q).replace(CLOZE, show ? "<mark>$1</mark>" : '<span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>') }

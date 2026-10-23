@@ -70,8 +70,11 @@ function aiParse(text) {
   });
   return out
 }
-function aiUser(outline, n, prior, o, P) {
-  return "MATERIAL\n\n" + outline + (o.guide ? "\n\nTEACHER GUIDANCE: " + o.guide : "") +
+function aiUser(outline, n, prior, o, P, job) {
+  var head = job && job.kind === "bridge"
+    ? "These are SEPARATE lessons. Write cards that CONNECT them: compare and contrast ideas, show how what one lesson produces is what another needs, or ask students to predict how a change in one process affects the other. Every card must need ideas from at least TWO of the lessons, and \"src\" should name the lessons involved.\n\n" + outline
+    : "LESSON: " + (job ? job.label : "") + "\n\nMATERIAL\n\n" + outline;
+  return head + (o.guide ? "\n\nTEACHER GUIDANCE: " + o.guide : "") +
     (prior.length ? "\n\nQUESTIONS ALREADY WRITTEN (do not repeat or rephrase; cover different ideas):\n" + prior.slice(-P.prior).map(function (q) { return "- " + q.replace(/\s+/g, " ").slice(0, 100) }).join("\n") : "") +
     "\n\nWrite " + n + " new cards now."
 }
@@ -148,35 +151,96 @@ async function aiChromeCall(sys, user, o) {
     catch (e) { if (e && e.name === "QuotaExceededError") throw new Error("That section is too long for the on-device model. Choose another AI provider in Settings for long decks."); if (e && e.name === "AbortError") throw e; return await ses.prompt(user) }
   } finally { if (ses && ses.destroy) ses.destroy() }
 }
-async function aiGenerate(secs, o) {
-  var pk = aiProvider(), P = AI_PROV[pk], chunks = aiChunks(secs, P.chunk), tl = chunks.reduce(function (a, c) { return a + c.len }, 0) || 1, all = [], sys = aiSystem(pk === "chrome");
-  var wants = chunks.map(function (c) { return Math.max(1, Math.round(o.count * c.len / tl)) }), total = wants.reduce(function (a, w) { return a + Math.ceil(w / P.batch) }, 0), done = 0, failed = null;
-  var report = o.report || function () { }, stop = o.cancelled || function () { return false };
+/* ---- sources, plan, blend, coverage ---- */
+function aiShort(n) { return String(n).replace(/\.[^.]+$/, "") }
+function aiSources() { return iFiles().filter(function (f) { return f.state === "ok" && f.secs.length }).map(function (f) { return { name: f.name, secs: f.secs } }) }
+function aiHasContent(s) { return !!(s.body.length || s.notes) }
+function aiSplit(total, weights) {
+  var sum = weights.reduce(function (a, b) { return a + b }, 0) || 1, raw = weights.map(function (w) { return total * w / sum }), base = raw.map(function (x) { return Math.max(1, Math.floor(x)) });
+  var diff = total - base.reduce(function (a, b) { return a + b }, 0), order = raw.map(function (x, i) { return i }).sort(function (a, b) { return (raw[b] - Math.floor(raw[b])) - (raw[a] - Math.floor(raw[a])) });
+  for (var k = 0; diff > 0 && k < 500; k++, diff--) base[order[k % order.length]]++;
+  for (var j = 0; diff < 0 && j < 500; j++) { var m = base.indexOf(Math.max.apply(null, base)); if (base[m] > 1) { base[m]--; diff++ } else break }
+  return base
+}
+/* how many questions each lesson gets: "auto" scales with the amount of content; connection questions are added when there is more than one lesson */
+function aiPlan(sources, setting) {
+  var units = sources.map(function (s) { return Math.max(1, s.secs.filter(aiHasContent).length) }), multi = sources.length > 1, per, bridge = 0;
+  if (setting === "auto" || !setting) {
+    per = units.map(function (u) { return Math.max(6, Math.min(36, Math.round(u * 0.9))) });
+    if (multi) bridge = Math.max(4, Math.min(12, Math.round(per.reduce(function (a, b) { return a + b }, 0) * 0.15)))
+  } else { var T = +setting; bridge = multi ? Math.max(2, Math.round(T * 0.15)) : 0; per = aiSplit(Math.max(sources.length, T - bridge), units) }
+  return { items: sources.map(function (s, i) { return { name: s.name, secs: s.secs, want: per[i] } }), bridge: bridge, total: per.reduce(function (a, b) { return a + b }, 0) + bridge }
+}
+function aiPlanText(plan) {
+  return "Plan: " + plan.items.map(function (it) { return esc(aiShort(it.name)) + " " + it.want }).join(" \u00b7 ") + (plan.bridge ? " \u00b7 connections between lessons " + plan.bridge : "") + " \u00b7 about " + plan.total + " questions in total."
+}
+function aiCondense(secs, max) {
+  var out = "", i;
+  for (i = 0; i < secs.length; i++) { var s = secs[i], p = "## " + s.title + (s.body.length ? "\n- " + s.body.slice(0, 2).join("\n- ") : "") + "\n"; if (out.length + p.length > max) break; out += p }
+  return out
+}
+function aiBlendCards(cards) {
+  var groups = {}, order = [], bridge = [], seen = {};
+  cards.forEach(function (c) { var k = c.q.toLowerCase().replace(/\s+/g, " "); if (seen[k]) return; seen[k] = 1; var f = c.file || ""; if (f === "Connections") { bridge.push(c); return } if (!groups[f]) { groups[f] = []; order.push(f) } groups[f].push(c) });
+  var out = [], i = 0, more = true;
+  while (more) { more = false; order.forEach(function (f) { if (groups[f][i]) { out.push(groups[f][i]); more = true } }); i++ }
+  return out.concat(bridge)
+}
+function aiNorm(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() }
+/* approximate: which slides or sections do the questions refer to? */
+function aiCoverage(sources, cards) {
+  var res = { total: 0, covered: 0, missing: [] };
+  sources.forEach(function (src) {
+    var mine = cards.filter(function (c) { return c.file === src.name || c.file === "Connections" }).map(function (c) { return { s: aiNorm(c.src), t: aiNorm(c.q + " " + c.a) } });
+    src.secs.forEach(function (sec) {
+      if (!aiHasContent(sec)) return; res.total++;
+      var t = aiNorm(sec.title), hit = t.length >= 3 && mine.some(function (c) { return (c.s && (c.s.indexOf(t) > -1 || (c.s.length >= 4 && t.indexOf(c.s) > -1))) || (t.length >= 8 && c.t.indexOf(t) > -1) });
+      if (hit) res.covered++; else res.missing.push({ file: src.name, sec: sec })
+    })
+  });
+  return res
+}
+async function aiGenerate(plan, o) {
+  var pk = aiProvider(), P = AI_PROV[pk], sys = aiSystem(pk === "chrome"), report = o.report || function () { }, stop = o.cancelled || function () { return false }, jobs = [], failed = null;
   o.status = o.status || function (t, pct) { if (typeof pct === "number" || /sign-in|download|loading/i.test(t || "")) report(t, pct, true) };
-  outer: for (var i = 0; i < chunks.length; i++) {
-    var want = wants[i], got = [], tries = 0, cap = Math.ceil(want / P.batch) + 2;
-    while (got.length < want && tries < cap) {
-      if (stop()) { all = all.concat(got.slice(0, want)); got = []; break outer }
+  plan.items.forEach(function (it) {
+    if (!it.want) return; var ch = aiChunks(it.secs, P.chunk), tl = ch.reduce(function (a, c) { return a + c.len }, 0) || 1;
+    ch.forEach(function (c) { jobs.push({ kind: "lesson", label: aiShort(it.name), file: it.name, text: c.text, want: Math.max(1, Math.round(it.want * c.len / tl)) }) })
+  });
+  if (plan.bridge && plan.items.length > 1) { var per = Math.floor(P.chunk / plan.items.length); jobs.push({ kind: "bridge", label: "connections between your lessons", file: "Connections", text: plan.items.map(function (it) { return "=== LESSON: " + aiShort(it.name) + " ===\n" + aiCondense(it.secs, per) }).join("\n"), want: plan.bridge }) }
+  var total = jobs.reduce(function (a, j) { return a + Math.ceil(j.want / P.batch) }, 0), done = 0, all = [];
+  outer: for (var i = 0; i < jobs.length; i++) {
+    var job = jobs[i], got = [], tries = 0, cap = Math.ceil(job.want / P.batch) + 2;
+    while (got.length < job.want && tries < cap) {
+      if (stop()) { all = all.concat(got.slice(0, job.want)); got = []; break outer }
       tries++;
-      var have = all.length + got.length, n = Math.min(P.batch, want - got.length);
-      report("Asking the AI for questions (request " + (done + 1) + " of about " + total + ")" + (have ? " \u00b7 " + have + " of " + o.count + " written so far" : ""), Math.min(99, done / total * 100), true);
-      try { var text = await P.call(sys, aiUser(chunks[i].text, n, all.concat(got).map(function (c) { return c.q }), o, P), o) }
-      catch (e) { if (all.length + got.length) { failed = e; all = all.concat(got.slice(0, want)); got = []; break outer } throw e }
-      done++; got = got.concat(aiParse(text));
+      var have = all.length + got.length, n = Math.min(P.batch, job.want - got.length);
+      report("Writing questions about " + job.label + " (request " + (done + 1) + " of about " + total + ")" + (have ? " \u00b7 " + have + " written so far" : ""), Math.min(99, done / total * 100), true);
+      try { var text = await P.call(sys, aiUser(job.text, n, all.concat(got).map(function (c) { return c.q }), o, P, job), o) }
+      catch (e) { if (all.length + got.length) { failed = e; all = all.concat(got.slice(0, job.want)); got = []; break outer } throw e }
+      done++; got = got.concat(aiParse(text).map(function (c) { c.file = job.file; return c }))
     }
-    all = all.concat(got.slice(0, want))
+    all = all.concat(got.slice(0, job.want))
   }
   o.warning = failed ? failed.message : "";
-  return all
+  return aiBlendCards(all)
 }
 /* Import screen: the AI section (only shown when "AI-written questions" is chosen) */
+function aiCovHTML() {
+  var c = imp.aiCov; if (!c || !c.total) return "";
+  var list = c.missing.slice(0, 8).map(function (m) { return esc(m.sec.title) }).join(", ") + (c.missing.length > 8 ? ", and " + (c.missing.length - 8) + " more" : "");
+  return '<div class="ainote" id="aicov"><div><b>Coverage:</b> the questions refer to about ' + c.covered + ' of ' + c.total + ' slides or sections with content (an approximate check).</div>' +
+    (c.missing.length ? '<div>Not clearly covered yet: ' + list + '.</div><div class="row"><button id="aif" type="button" class="sm">Write questions for the missing parts</button></div>' : "<div>Everything with content looks covered.</div>") + '</div>'
+}
+function aiPlanNow() { return aiPlan(aiSources(), imp.aiN || "auto") }
 function aiControls() {
-  var n = imp.aiN || 30, has = (imp.ai || []).length, P = AI_PROV[aiProvider()];
-  return '<p class="hint">Reads your material and writes questions about the ideas behind it (why, how, compare, predict, apply), not just the slide wording. Provider: ' + esc(P.short) + '. <button class="sm" id="aic" type="button">Change in Settings</button></p>' +
-    '<label for="aiN">How many questions</label><select id="aiN">' + [15, 30, 45].map(function (x) { return '<option' + (n === x ? " selected" : "") + '>' + x + '</option>' }).join("") + '</select>' +
+  var n = String(imp.aiN || "auto"), has = (imp.ai || []).length, P = AI_PROV[aiProvider()];
+  return '<p class="hint">Reads each lesson you added and writes questions about the ideas behind it (why, how, compare, predict, apply), not just the slide wording. With more than one lesson, the questions are blended and some connect the lessons. Provider: ' + esc(P.short) + '. <button class="sm" id="aic" type="button">Change in Settings</button></p>' +
+    '<label for="aiN">How many questions</label><select id="aiN">' + [["auto", "Automatic (recommended)"], ["15", "About 15"], ["30", "About 30"], ["45", "About 45"], ["60", "About 60"]].map(function (x) { return '<option value="' + x[0] + '"' + (n === x[0] ? " selected" : "") + '>' + x[1] + '</option>' }).join("") + '</select>' +
+    '<p class="hint" id="aiplan" style="margin:4px 0 0">' + aiPlanText(aiPlanNow()) + '</p>' +
     '<label for="aiG">Level or focus (optional)</label><input type="text" id="aiG" placeholder="e.g. 9th grade biology; stress how the two stages connect" value="' + esc(imp.aiG || "") + '">' +
     '<div class="row"><button class="primary" id="aib" type="button">' + (has ? "Write a new set" : "Write questions with AI") + '</button><button id="aix" type="button" hidden>Stop</button></div>' +
-    progHTML("aiprog", "") + '<p class="hint" id="aim" role="status">' + esc(imp.aiMsg || "") + '</p>'
+    progHTML("aiprog", "") + '<p class="hint" id="aim" role="status">' + esc(imp.aiMsg || "") + '</p>' + aiCovHTML()
 }
 function aiWire(v) {
   var c = $("#aic"); if (c) c.onclick = function () { tab = "set"; render() };
@@ -184,26 +248,33 @@ function aiWire(v) {
   if (aiProvider() === "puter") aiLoadPuter().catch(function () { });
   function rep(label, pct, busy) { imp.aiLabel = label; if (pct !== undefined) imp.aiPct = pct; progSet("aiprog", imp.aiPct, label, busy) }
   if (imp.aiRunning) { b.disabled = true; $("#aix").hidden = false; progSet("aiprog", imp.aiPct, imp.aiLabel, true) }
+  $("#aiN").onchange = function () { imp.aiN = this.value; $("#aiplan").innerHTML = aiPlanText(aiPlanNow()) };
   $("#aix").onclick = function () { imp.aiCancel = true; $("#aix").disabled = true; rep("Stopping after the current request\u2026", undefined, true) };
-  b.onclick = async function () {
+  async function run(fill) {
     if (imp.aiRunning) return;
-    imp.aiN = +$("#aiN").value; imp.aiG = $("#aiG").value.trim(); imp.aiRunning = true; imp.aiCancel = false; imp.aiPct = null; imp.aiMsg = "";
-    b.disabled = true; $("#aix").hidden = false; $("#aix").disabled = false; var m = $("#aim"); m.textContent = ""; m.className = "hint"; rep("Getting ready\u2026", null, true);
-    var stopTimer = progTimer("aiprog"), o = { count: imp.aiN, guide: imp.aiG, report: rep, cancelled: function () { return imp.aiCancel } };
+    imp.aiN = $("#aiN").value; imp.aiG = $("#aiG").value.trim(); imp.aiRunning = true; imp.aiCancel = false; imp.aiPct = null; imp.aiMsg = "";
+    var plan = aiPlanNow();
+    if (fill && imp.aiCov) {
+      var by = {}; imp.aiCov.missing.forEach(function (m) { (by[m.file] = by[m.file] || []).push(m.sec) });
+      plan = { items: Object.keys(by).map(function (f) { return { name: f, secs: by[f], want: Math.max(2, Math.min(30, Math.ceil(by[f].length * 0.8))) } }), bridge: 0, total: 0 }
+    }
+    b.disabled = true; var fb = $("#aif"); if (fb) fb.disabled = true; $("#aix").hidden = false; $("#aix").disabled = false; var m = $("#aim"); m.textContent = ""; m.className = "hint"; rep("Getting ready\u2026", null, true);
+    var stopTimer = progTimer("aiprog"), o = { count: plan.total, guide: imp.aiG, report: rep, cancelled: function () { return imp.aiCancel } };
     try {
-      var cards = await aiGenerate(imp.secs, o);
+      var cards = await aiGenerate(plan, o);
       stopTimer(); imp.aiRunning = false;
-      if (!cards.length) { progHide("aiprog"); m.className = "hint fl-err"; m.textContent = imp.aiCancel ? "Stopped before any questions were written." : "The AI didn't return any usable questions. Try again."; imp.aiMsg = m.textContent; b.disabled = false; $("#aix").hidden = true; return }
-      imp.ai = cards; imp.method = "ai"; rebuild();
-      var msg = (imp.aiCancel ? "Stopped. Kept " : "Wrote ") + cards.length + " questions. Review them below.";
-      progDone("aiprog", msg); imp.aiMsg = o.warning ? "Some requests failed (" + o.warning + "), so you may have fewer questions than you asked for." : "";
-      m.className = o.warning ? "hint fl-err" : "hint"; m.textContent = imp.aiMsg;
-      b.disabled = false; b.textContent = "Write a new set"; $("#aix").hidden = true; step3(v);
+      if (!cards.length) { progHide("aiprog"); m.className = "hint fl-err"; m.textContent = imp.aiCancel ? "Stopped before any questions were written." : "The AI didn't return any usable questions. Try again."; imp.aiMsg = m.textContent; b.disabled = false; if (fb) fb.disabled = false; $("#aix").hidden = true; return }
+      imp.ai = fill ? aiBlendCards((imp.ai || []).concat(cards)) : cards; imp.method = "ai"; imp.aiCov = aiCoverage(aiSources(), imp.ai); rebuild();
+      var msg = (imp.aiCancel ? "Stopped. Kept " : "Wrote ") + cards.length + (fill ? " more" : "") + " questions" + (fill ? "" : " (" + imp.ai.length + " in total)") + ". Review them below.";
+      progDone("aiprog", msg); imp.aiMsg = o.warning ? "Some requests failed (" + o.warning + "), so you may have fewer questions than planned." : "";
+      importView(v); progDone("aiprog", msg);
       var s3 = $("#istep3"); if (s3 && s3.scrollIntoView) s3.scrollIntoView({ behavior: "smooth", block: "start" })
     } catch (e) {
-      stopTimer(); imp.aiRunning = false; progHide("aiprog"); m.className = "hint fl-err"; m.textContent = e.message || "Something went wrong."; imp.aiMsg = m.textContent; b.disabled = false; $("#aix").hidden = true
+      stopTimer(); imp.aiRunning = false; progHide("aiprog"); m.className = "hint fl-err"; m.textContent = e.message || "Something went wrong."; imp.aiMsg = m.textContent; b.disabled = false; if (fb) fb.disabled = false; $("#aix").hidden = true
     }
   }
+  b.onclick = function () { run(false) };
+  var f = $("#aif"); if (f) f.onclick = function () { run(true) }
 }
 /* Settings screen: provider dropdown, a note for each provider, and that provider's fields */
 function aiSettings(el) {

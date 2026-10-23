@@ -9,6 +9,8 @@ Built for the TSA Software Development event. Everything runs in the browser. Th
 - **Cards from slide decks and documents.** Upload a `.pptx` or `.docx`. Recall reads slide text, tables, speaker notes and pictures, then proposes cards you review before adding.
 - **AI-written questions (optional).** Instead of copying slide text, an AI model writes why/how, compare, connect, predict and apply questions with short model answers, and flags slide mistakes for you to check. Pick the provider in Settings: Puter (default; free account, nothing to install, no key), Chrome's built-in on-device AI (free, no key, nothing leaves the device, but needs flags switched on and a desktop computer), Google Gemini with a free AI Studio key, or Claude with an Anthropic API key (no key needed inside Claude). Teachers can also generate a deck once and share the exported Recall JSON, so students need no AI at all. Everything is reviewed before it is added.
 - **Import in three steps.** Add your material and see exactly what was read (slides, notes, pictures); choose ONE way to make cards (AI-written questions or automatic cards); then review with search and filters before adding. Progress bars show every slow step: reading files, writing questions with AI, downloading the on-device model and signing in.
+- **Accounts and saving online (optional).** Cards always save on the device. Signing in (with a free Puter account, in a pop-up) also saves decks, cards, progress and settings to the person's own Puter storage, so they can open them on any computer. Changes from several devices are merged, and deletions carry over. API keys are never saved online. Use *Sign out and remove my cards from this device* on shared computers.
+- **AI questions blended across lessons.** With several files loaded, each lesson gets its own share of questions (Automatic scales with how much content there is), the lessons are interleaved, and extra questions connect them. A coverage check lists slides that no question refers to and can write questions for them.
 - **Dashboard with modular widgets.** Reviews, lessons, daily progress, progress by stage, a 7-day review forecast, streak and accuracy, a 28-day activity map, decks, trouble spots and quick actions. Show, hide and reorder them with *Customize*.
 - **One guided session.** Press *Start studying* on Today. Recall runs the reviews that are due, then teaches a few new cards and quizzes them, with a step tracker, a progress bar, a note after every answer, and a summary at the end that shows how far you are through the deck. *Practice* goes through every card without changing the schedule.
 - **Learning stage and daily limits.** New cards are taught in lessons (in small batches), then quizzed until you answer correctly a set number of times before they join reviews. Settings control new cards per day, maximum reviews per day, learning steps, lesson batch size and shuffle.
@@ -53,6 +55,7 @@ js/settings.js        daily limits, learning steps, duplicate scope
 js/create.js          create and edit cards, image and audio capture
 js/parsers.js         pptx, docx, csv/tsv, txt/md and json parsers; card generation
 js/progress.js        progress bars used wherever something takes time
+js/account.js         optional accounts: Puter sign-in, saving online, merging devices
 js/ai.js              optional AI question writing: Puter, Chrome built-in, Gemini and Claude providers
 js/import-view.js     import screen and the review-before-add list
 js/library.js         library, search, progress boxes and all exports
@@ -81,7 +84,7 @@ Because the rules are heuristic, every generated card is shown for review first.
 - Legacy `.ppt` and `.doc` files and PDFs can't be read. Save as `.pptx` or `.docx`, or paste the text.
 - Anki `.apkg` packages aren't supported. Use Anki's *Notes in Plain Text* export instead.
 - Anki and Quizlet exports carry card text only. Recall JSON keeps images and audio.
-- Data lives in the browser's IndexedDB on one device. Use Recall JSON export to back up or move decks.
+- Without an account, data lives in the browser's IndexedDB on one device (use Recall JSON export to back up or move decks). With an account it is also saved to the person's Puter storage. Pictures and audio make saving slower.
 - Microphone recording depends on browser permission.
 
 ## Ideas for next steps

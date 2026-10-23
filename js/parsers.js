@@ -75,10 +75,10 @@ function gen(secs, o) {
   secs.forEach(function (s) {
     var terms = [], rest = [];
     s.body.forEach(function (b) { var m = b.match(/^(.{2,60}?)\s*(?::|\u2013|\u2014| - )\s+(.{6,})$/); if (o.terms && m) terms.push(m); else rest.push(b) });
-    terms.forEach(function (m) { out.push({ q: m[1], a: m[2], src: s.title }) });
-    if (o.key && (rest.length || s.notes)) { var a = rest.map(function (x) { return "• " + x }).join("\n"); if (s.notes) a += (a ? "\n\n" : "") + "Speaker notes: " + s.notes; out.push({ q: "Key points: " + s.title, a: a, src: s.title }) }
-    if (o.cloze) { var n = 0; rest.forEach(function (b) { if (n >= 2) return; var w = b.split(/\s+/); if (w.length < 6) return; var best = ""; w.forEach(function (x) { var y = x.replace(/[^\p{L}\p{N}-]/gu, ""); if (y.length > best.length && y.length >= 6) best = y }); if (!best) return; out.push({ q: b.replace(best, "{{c1::" + best + "}}"), a: "", src: s.title }); n++ }) }
-    if (o.img) s.imgs.slice(0, 2).forEach(function (im) { out.push({ q: "What concept does this picture illustrate?", a: s.title + (rest[0] ? "\n" + rest[0] : ""), img: im, src: s.title }) })
+    terms.forEach(function (m) { out.push({ q: m[1], a: m[2], src: s.title, file: s.file }) });
+    if (o.key && (rest.length || s.notes)) { var a = rest.map(function (x) { return "• " + x }).join("\n"); if (s.notes) a += (a ? "\n\n" : "") + "Speaker notes: " + s.notes; out.push({ q: "Key points: " + s.title, a: a, src: s.title, file: s.file }) }
+    if (o.cloze) { var n = 0; rest.forEach(function (b) { if (n >= 2) return; var w = b.split(/\s+/); if (w.length < 6) return; var best = ""; w.forEach(function (x) { var y = x.replace(/[^\p{L}\p{N}-]/gu, ""); if (y.length > best.length && y.length >= 6) best = y }); if (!best) return; out.push({ q: b.replace(best, "{{c1::" + best + "}}"), a: "", src: s.title, file: s.file }); n++ }) }
+    if (o.img) s.imgs.slice(0, 2).forEach(function (im) { out.push({ q: "What concept does this picture illustrate?", a: s.title + (rest[0] ? "\n" + rest[0] : ""), img: im, src: s.title, file: s.file }) })
   });
   return out
 }

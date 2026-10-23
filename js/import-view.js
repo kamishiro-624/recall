@@ -12,7 +12,7 @@ function recompute() {
 }
 function wrapCard(c) { return { c: c, on: true } }
 function rebuild() {
-  imp.items = imp.direct.map(wrapCard).concat(useAI() ? (imp.ai || []).map(wrapCard) : gen(imp.secs, iopts()).map(wrapCard)); markDups(false)
+  imp.items = imp.direct.map(wrapCard).concat(useAI() ? aiBlendCards(imp.ai || []).map(wrapCard) : aiBlendCards(gen(imp.secs, iopts())).map(wrapCard)); markDups(false)
 }
 function markDups(keepTouched) {
   var seen = {}, all = S().dupScope === "all", def = deckId(imp.deck || "My deck");
@@ -52,7 +52,7 @@ async function ingest(list) {
       else { var r = fromText(await f.text(), base); e.direct = r.direct; e.secs = r.secs }
       if (e.state === "reading") { e.note = describe(e, ext); if (e.note) e.state = "ok"; else { e.state = "warn"; e.note = "Nothing usable was found. Try a deck with text on the slides, or paste notes." } }
     } catch (err) { e.state = "err"; e.note = err && err.message === "jszip" ? "The file reader didn't load. Check your internet connection and reload the page." : "Couldn't read this file. It may be damaged or password protected." }
-    imp.ai = imp.ai && imp.ai.length ? imp.ai : []; recompute(); rebuild();
+    e.secs.forEach(function (s) { s.file = e.name }); recompute(); rebuild();
   }
   importView($("#view"))
 }
@@ -69,6 +69,7 @@ function fileHTML(f) {
     (f.state === "reading" ? progHTML("fp" + f.id, f.label) : '<div class="file-note" role="status">' + (f.state === "ok" ? "Loaded: " : "") + esc(f.note) + '</div>') + more + '</div>' + (f.state === "reading" ? "" : '<button class="sm" type="button" data-rm="' + f.id + '" aria-label="Remove ' + esc(f.name) + '">Remove</button>') + '</li>'
 }
 function importView(v) {
+  if (imp.ai && imp.ai.length) imp.aiCov = aiCoverage(aiSources(), imp.ai);
   var files = iFiles(), hasSecs = imp.secs.length > 0, hasDirect = imp.direct.length > 0, o = iopts(), ai = useAI();
   var ok = files.filter(function (f) { return f.state === "ok" }).length;
   v.innerHTML = addSeg("import") +
@@ -99,17 +100,17 @@ function autoCount() {
 }
 /* step 3: review with search and filters */
 function visibleItems() {
-  var q = (imp.q || "").toLowerCase().trim(), fs = imp.fs || "all", ft = imp.ft || "all";
+  var q = (imp.q || "").toLowerCase().trim(), fs = imp.fs || "all", ft = imp.ft || "all", fsrc = imp.fsrc || "all";
   return imp.items.map(function (x, i) { return { x: x, i: i } }).filter(function (p) {
     var x = p.x, c = x.c;
     if (q && ((c.q || "") + " " + (c.a || "")).toLowerCase().indexOf(q) < 0) return false;
     if (fs === "on" && !x.on) return false; if (fs === "off" && x.on) return false; if (fs === "dup" && !x.dup) return false; if (fs === "check" && !c.note) return false;
-    if (ft !== "all" && kind(c) !== ft) return false; return true
+    if (ft !== "all" && kind(c) !== ft) return false; if (fsrc !== "all" && c.file !== fsrc) return false; return true
   })
 }
 function itemHTML(x, i) {
   var c = x.c;
-  return '<div class="item"><input type="checkbox" data-i="' + i + '" aria-label="Include card"' + (x.on ? " checked" : "") + '>' + (c.img ? '<img alt="" src="' + c.img + '">' : "") + '<div class="body"><div>' + esc((c.q || "").replace(/\n/g, " ")) + '</div><div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div>' + (c.note ? '<div class="a"><b>Check:</b> ' + esc(c.note) + '</div>' : "") + '</div>' + (x.dup ? '<span class="chip warn">duplicate</span>' : "") + (c.ai ? '<span class="chip">AI</span>' : "") + '<span class="chip">' + kind(c) + '</span></div>'
+  return '<div class="item"><input type="checkbox" data-i="' + i + '" aria-label="Include card"' + (x.on ? " checked" : "") + '>' + (c.img ? '<img alt="" src="' + c.img + '">' : "") + '<div class="body"><div>' + esc((c.q || "").replace(/\n/g, " ")) + '</div><div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div>' + (c.note ? '<div class="a"><b>Check:</b> ' + esc(c.note) + '</div>' : "") + '</div>' + (x.dup ? '<span class="chip warn">duplicate</span>' : "") + (c.ai ? '<span class="chip">AI</span>' : "") + (imp.multiSrc && c.file ? '<span class="chip">' + esc(aiShort(c.file)) + '</span>' : "") + '<span class="chip">' + kind(c) + '</span></div>'
 }
 function paintCounts() {
   var on = imp.items.filter(function (x) { return x.on }).length, vis = visibleItems(), hidden = on - vis.filter(function (p) { return p.x.on }).length;
@@ -126,17 +127,18 @@ function paintList() {
 function step3(v) {
   var host = $("#istep3"); if (!host) return;
   if (!imp.items.length) { host.innerHTML = ""; return }
-  var nd = imp.items.filter(function (x) { return x.dup }).length, fs = imp.fs || "all", ft = imp.ft || "all", hasNote = imp.items.some(function (x) { return x.c.note }); if (fs === "check" && !hasNote) fs = imp.fs = "all";
+  var srcs = []; imp.items.forEach(function (x) { if (x.c.file && srcs.indexOf(x.c.file) < 0) srcs.push(x.c.file) }); imp.multiSrc = srcs.length > 1; if (!imp.multiSrc || srcs.indexOf(imp.fsrc) < 0 && imp.fsrc !== "all") imp.fsrc = "all";
+  var nd = imp.items.filter(function (x) { return x.dup }).length, fs = imp.fs || "all", ft = imp.ft || "all", fsrc = imp.fsrc || "all", hasNote = imp.items.some(function (x) { return x.c.note }); if (fs === "check" && !hasNote) fs = imp.fs = "all";
   host.innerHTML = '<div class="panel"><h2>3. Review ' + imp.items.length + ' cards</h2><p class="hint">Uncheck anything you don\'t want. ' + (nd ? '<b>' + nd + ' look like duplicates</b> (same prompt already in the deck or earlier in this import) and start unchecked.' : 'No duplicates found.') + ' New cards are taught in your next study session.</p>' +
     '<label for="idn">Add to deck</label><input type="text" id="idn" value="' + esc(imp.deck || "My deck") + '">' +
     '<div class="toolbar"><input type="search" id="is" placeholder="Search these cards" aria-label="Search cards" value="' + esc(imp.q || "") + '">' +
     '<select id="ifs" aria-label="Show which cards"><option value="all"' + (fs === "all" ? " selected" : "") + '>All cards</option><option value="on"' + (fs === "on" ? " selected" : "") + '>Selected</option><option value="off"' + (fs === "off" ? " selected" : "") + '>Not selected</option><option value="dup"' + (fs === "dup" ? " selected" : "") + '>Possible duplicates</option>' + (hasNote ? '<option value="check"' + (fs === "check" ? " selected" : "") + '>Needs checking</option>' : "") + '</select>' +
-    '<select id="ift" aria-label="Card type">' + [["all", "All types"], ["text", "Text"], ["fill-in", "Fill-in"], ["image", "Image"], ["audio", "Audio"]].map(function (t) { return '<option value="' + t[0] + '"' + (ft === t[0] ? " selected" : "") + '>' + t[1] + '</option>' }).join("") + '</select></div>' +
+    (imp.multiSrc ? '<select id="ifsrc" aria-label="Which lesson">' + [["all", "All lessons"]].concat(srcs.map(function (f) { return [f, aiShort(f)] })).map(function (t) { return '<option value="' + esc(t[0]) + '"' + (fsrc === t[0] ? " selected" : "") + '>' + esc(t[1]) + '</option>' }).join("") + '</select>' : "") + '<select id="ift" aria-label="Card type">' + [["all", "All types"], ["text", "Text"], ["fill-in", "Fill-in"], ["image", "Image"], ["audio", "Audio"]].map(function (t) { return '<option value="' + t[0] + '"' + (ft === t[0] ? " selected" : "") + '>' + t[1] + '</option>' }).join("") + '</select></div>' +
     '<p class="hint" id="icount" role="status"></p><div class="row"><button class="sm" id="sa" type="button">Select shown</button><button class="sm" id="sn" type="button">Deselect shown</button><button class="sm" id="sd" type="button">Select shown, skip duplicates</button></div>' +
     '<div id="ilist" class="review"></div><p class="hint" id="ihid"></p><div class="row"><button class="primary" id="ad" type="button">Add</button></div></div>';
   paintList();
   $("#is").oninput = function () { imp.q = this.value; paintList() };
-  $("#ifs").onchange = function () { imp.fs = this.value; paintList() }; $("#ift").onchange = function () { imp.ft = this.value; paintList() };
+  $("#ifs").onchange = function () { imp.fs = this.value; paintList() }; $("#ift").onchange = function () { imp.ft = this.value; paintList() }; if ($("#ifsrc")) $("#ifsrc").onchange = function () { imp.fsrc = this.value; paintList() };
   function setShown(fn) { visibleItems().forEach(function (p) { p.x.on = fn(p.x); p.x.touched = true }); paintList() }
   $("#sa").onclick = function () { setShown(function () { return true }) }; $("#sn").onclick = function () { setShown(function () { return false }) }; $("#sd").onclick = function () { setShown(function (x) { return !x.dup }) };
   $("#idn").oninput = function () { imp.deck = this.value }; $("#idn").onchange = function () { markDups(true); step3(v) };
