@@ -18,6 +18,6 @@ function setView(v) {
     $("#shuffle").onchange = function () { s.shuffle = this.checked; save(); say("Saved.") };
     $("#dupScope").onchange = function () { s.dupScope = this.value; save(); say("Saved.") };
     acctPaint(); aiSettings($("#aiSet"));
-    $("#rw").onclick = function () { DB.widgets = null; normWidgets(); save(); say("Home page restored to the default layout.") };
-    $("#rt").onclick = function () { delete DB.log[today()]; save(); shell(); say("Today's counters were reset.") }
+    $("#rw").onclick = async function () { if (!(await askConfirm({ title: "Restore the default home page?", body: "Your custom layout, sizes and note are replaced by the standard layout.", ok: "Restore default", danger: true }))) return; applyPreset("balanced"); save(); say("Home page restored to the default layout.") };
+    $("#rt").onclick = async function () { if (!(await askConfirm({ title: "Reset today's counters?", body: "Today's new-card and review counts go back to zero, so Recall will offer today's new cards and reviews again.", ok: "Reset counters", danger: true }))) return; delete DB.log[today()]; save(); shell(); say("Today's counters were reset.") }
 }

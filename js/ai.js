@@ -283,6 +283,7 @@ function aiWire(v) {
   $("#aix").onclick = function () { imp.aiCancel = true; $("#aix").disabled = true; rep("Stopping after the current request\u2026", undefined, true) };
   async function run(fill) {
     if (imp.aiRunning) return;
+    if (!fill && imp.ai && imp.ai.length && !(await askConfirm({ title: "Replace the AI questions you have?", body: "Writing a new set discards the " + imp.ai.length + " questions below. Nothing has been added to your decks yet.", ok: "Write a new set", danger: true }))) return;
     imp.aiN = $("#aiN").value; imp.aiS = $("#aiS").value; imp.aiG = $("#aiG").value.trim(); imp.aiRunning = true; imp.aiCancel = false; imp.aiPct = null; imp.aiMsg = "";
     var plan = aiPlanNow();
     if (fill && imp.aiCov) {

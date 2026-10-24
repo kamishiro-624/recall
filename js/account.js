@@ -36,7 +36,7 @@ function mergeInto(L, R) {
   L.log = L.log || {};
   Object.keys(R.log || {}).forEach(function (k) {
     var a = L.log[k], b = R.log[k];
-    if (!a) { L.log[k] = Object.assign({}, b); chg.local = true } else["r", "c", "l", "q"].forEach(function (f) { if ((b[f] || 0) > (a[f] || 0)) { a[f] = b[f]; chg.local = true } else if ((b[f] || 0) < (a[f] || 0)) chg.cloud = true })
+    if (!a) { L.log[k] = Object.assign({}, b); chg.local = true } else ["r", "c", "l", "q"].forEach(function (f) { if ((b[f] || 0) > (a[f] || 0)) { a[f] = b[f]; chg.local = true } else if ((b[f] || 0) < (a[f] || 0)) chg.cloud = true })
   });
   Object.keys(L.log).forEach(function (k) { if (!(R.log || {})[k]) chg.cloud = true });
   if ((R.updated || 0) > (L.updated || 0)) {
@@ -134,7 +134,7 @@ function acctInner() {
 function acctWire() {
   var on = function (id, fn) { var e = document.getElementById(id); if (e) e.onclick = fn };
   on("acin", acctSignIn); on("acsave", function () { cloudSync("push") }); on("acout", function () { acctSignOut(false) });
-  on("acclr", function () { if (confirm("Remove your cards from this device? They stay in your online account.")) acctSignOut(true) });
+  on("acclr", async function () { if (await askConfirm({ title: "Remove your cards from this device?", body: "You will be signed out and the cards on this device are deleted. They stay safe in your online account.", ok: "Sign out and remove", danger: true })) acctSignOut(true) });
   on("acuse", function () { acctChoose(true) }); on("acmerge", function () { acctChoose(false) })
 }
 function acctPaint() {

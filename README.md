@@ -11,7 +11,8 @@ Built for the TSA Software Development event. Everything runs in the browser. Th
 - **Import in three steps.** Add your material and see exactly what was read (slides, notes, pictures); choose ONE way to make cards (AI-written questions or automatic cards); then review with search and filters before adding. Progress bars show every slow step: reading files, writing questions with AI, downloading the on-device model and signing in.
 - **Accounts and saving online (optional).** Cards always save on the device. Signing in (with a free Puter account, in a pop-up) also saves decks, cards, progress and settings to the person's own Puter storage, so they can open them on any computer. Changes from several devices are merged, and deletions carry over. API keys are never saved online. Use *Sign out and remove my cards from this device* on shared computers.
 - **AI questions blended across lessons.** With several files loaded, each lesson gets its own share of questions (Automatic scales with how much content there is), the lessons are interleaved, and extra questions connect them. A coverage check lists slides that no question refers to and can write questions for them.
-- **Dashboard with modular widgets.** Reviews, lessons, daily progress, progress by stage, a 7-day review forecast, streak and accuracy, a 28-day activity map, decks, trouble spots and quick actions. Show, hide and reorder them with *Customize*.
+- **Customizable home screen.** Today, progress by stage, streak, daily goal, review forecast, activity map, decks, trouble spots and a personal note. In *Customize*, drag sections (or use the arrows), give each a size (small, medium, large, full), hide or add them back, set options such as forecast length, or start from a ready-made layout. Rows always fill the width, so there are no gaps, and it collapses to one column on phones.
+- **Safe deleting.** Delete one card or many at once in the Library (select, search and filter first). Every destructive action asks for confirmation first: deleting cards or decks, removing duplicates, replacing AI questions, resetting counters and clearing a shared computer.
 - **One guided session.** Press *Start studying* on Today. Recall runs the reviews that are due, then teaches a few new cards and quizzes them, with a step tracker, a progress bar, a note after every answer, and a summary at the end that shows how far you are through the deck. *Practice* goes through every card without changing the schedule.
 - **Learning stage and daily limits.** New cards are taught in lessons (in small batches), then quizzed until you answer correctly a set number of times before they join reviews. Settings control new cards per day, maximum reviews per day, learning steps, lesson batch size and shuffle.
 - **Duplicate detection** when creating and importing (same prompt, same picture or audio), within a deck or across all decks, plus one-click cleanup in the Library.
@@ -58,7 +59,8 @@ js/progress.js        progress bars used wherever something takes time
 js/account.js         optional accounts: Puter sign-in, saving online, merging devices
 js/ai.js              optional AI question writing: Puter, Chrome built-in, Gemini and Claude providers
 js/import-view.js     import screen and the review-before-add list
-js/library.js         library, search, progress boxes and all exports
+js/library.js         library with search, filters, bulk delete and all exports
+js/ui.js              confirmation dialog
 js/app.js             boot
 sample/               files to try the importers with
 tools/bundle.py       builds a single-file version: python3 tools/bundle.py > recall.html
