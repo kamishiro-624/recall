@@ -1,885 +1,1137 @@
 /* Study flow: Today card, session header, steps, progress, summary, add-cards switch, advanced settings.
    Loaded after styles.css and built on its theme tokens. */
 .wfull {
-   grid-column: 1 / -1
+  grid-column: 1 / -1
 }
 
 .fl-hero {
-   display: flex;
-   flex-wrap: wrap;
-   align-items: center;
-   justify-content: space-between;
-   gap: 14px 20px;
-   margin-bottom: 14px
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 20px;
+  margin-bottom: 14px
 }
 
 .fl-title {
-   font: 700 22px/1.25 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif
+  font: 700 22px/1.25 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif
 }
 
 .fl-sub {
-   margin: 4px 0 0;
-   color: var(--mute)
+  margin: 4px 0 0;
+  color: var(--mute)
 }
 
 .fl-cta {
-   font-size: 17px;
-   padding: 12px 22px
+  font-size: 17px;
+  padding: 12px 22px
 }
 
 .fl-prog .meta {
-   margin-bottom: 4px
+  margin-bottom: 4px
 }
 
 .fl-foot {
-   margin-top: 14px;
-   justify-content: center
+  margin-top: 14px;
+  justify-content: center
 }
 
 /* Session header */
 .fl-head {
-   margin: 0 0 12px
+  margin: 0 0 12px
 }
 
 .fl-steps {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 8px;
-   list-style: none;
-   margin: 0 0 10px;
-   padding: 0
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0
 }
 
 .fl-steps li {
-   display: inline-flex;
-   align-items: center;
-   gap: .5em;
-   padding: 6px 12px;
-   border-radius: 999px;
-   font: 500 14.5px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-   color: var(--mute);
-   background: var(--surface);
-   border: 1px solid var(--line)
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font: 500 14.5px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  color: var(--mute);
+  background: var(--surface);
+  border: 1px solid var(--line)
 }
 
 .fl-steps li b {
-   display: inline-grid;
-   place-items: center;
-   width: 1.6em;
-   height: 1.6em;
-   border-radius: 50%;
-   font-size: .85em;
-   color: var(--mute);
-   background: var(--line)
+  display: inline-grid;
+  place-items: center;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 50%;
+  font-size: .85em;
+  color: var(--mute);
+  background: var(--line)
 }
 
 .fl-steps li span {
-   font-size: .92em
+  font-size: .92em
 }
 
 .fl-steps li.on {
-   color: var(--ink);
-   border-color: var(--acc)
+  color: var(--ink);
+  border-color: var(--acc)
 }
 
 .fl-steps li.on b {
-   color: var(--accInk);
-   background: var(--acc)
+  color: var(--accInk);
+  background: var(--acc)
 }
 
 .fl-steps li.ok {
-   color: var(--ink)
+  color: var(--ink)
 }
 
 .fl-steps li.ok b {
-   color: var(--accInk);
-   background: var(--ok)
+  color: var(--accInk);
+  background: var(--ok)
 }
 
 .fl-meta {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   margin-top: 6px;
-   font-size: 14px;
-   color: var(--mute)
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--mute)
 }
 
 .fl-last {
-   margin: 8px 0 10px;
-   padding: 8px 12px;
-   font-size: 15px;
-   color: var(--ink);
-   background: var(--bg);
-   border-radius: 8px
+  margin: 8px 0 10px;
+  padding: 8px 12px;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--bg);
+  border-radius: 8px
 }
 
 .fl-pips {
-   letter-spacing: .12em;
-   color: var(--acc)
+  letter-spacing: .12em;
+  color: var(--acc)
 }
 
 .rate button small {
-   display: block;
-   margin-top: 2px;
-   font-size: 12px;
-   font-weight: 400;
-   color: var(--mute)
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--mute)
 }
 
 /* Summary */
 .fl-stats {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 12px;
-   margin: 12px 0
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0
 }
 
 .fl-stats div {
-   flex: 1 1 120px;
-   padding: 12px 14px;
-   border: 1px solid var(--line);
-   border-radius: 12px;
-   text-align: center
+  flex: 1 1 120px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-align: center
 }
 
 .fl-stats b {
-   display: block;
-   font: 700 30px/1.1 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif
+  display: block;
+  font: 700 30px/1.1 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif
 }
 
 .fl-stats span {
-   font-size: 14px;
-   color: var(--mute)
+  font-size: 14px;
+  color: var(--mute)
 }
 
 /* Add cards switch */
 .seg {
-   display: flex;
-   margin: 0 0 14px;
-   overflow: hidden;
-   background: var(--surface);
-   border: 1px solid var(--line);
-   border-radius: 12px
+  display: flex;
+  margin: 0 0 14px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px
 }
 
 .seg button {
-   flex: 1;
-   margin: 0;
-   padding: 12px 14px;
-   font-weight: 600;
-   background: transparent;
-   border: 0;
-   border-radius: 0
+  flex: 1;
+  margin: 0;
+  padding: 12px 14px;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  border-radius: 0
 }
 
 .seg button+button {
-   border-left: 1px solid var(--line)
+  border-left: 1px solid var(--line)
 }
 
 .seg button.on {
-   color: var(--accInk);
-   background: var(--acc)
+  color: var(--accInk);
+  background: var(--acc)
 }
 
 .seg button:not(.on):hover {
-   background: var(--bg)
+  background: var(--bg)
 }
 
 /* Advanced settings */
 details.adv>summary {
-   cursor: pointer;
-   padding: 4px 0;
-   font: 700 17px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-   list-style: none
+  cursor: pointer;
+  padding: 4px 0;
+  font: 700 17px "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  list-style: none
 }
 
 details.adv>summary::-webkit-details-marker {
-   display: none
+  display: none
 }
 
 details.adv>summary::before {
-   content: "\25b8";
-   display: inline-block;
-   width: 1.2em;
-   transition: transform .15s
+  content: "\25b8";
+  display: inline-block;
+  width: 1.2em;
+  transition: transform .15s
 }
 
 details.adv[open]>summary::before {
-   transform: rotate(90deg)
+  transform: rotate(90deg)
 }
 
 /* Progress bars (js/progress.js) */
 .load {
-   margin: 12px 0
+  margin: 12px 0
 }
 
 .load[hidden] {
-   display: none
+  display: none
 }
 
 .load-top {
-   display: flex;
-   justify-content: space-between;
-   align-items: baseline;
-   gap: 12px;
-   font-size: 14px;
-   color: var(--mute)
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--mute)
 }
 
 .load-label {
-   color: var(--ink)
+  color: var(--ink)
 }
 
 .load-side {
-   display: inline-flex;
-   gap: 10px;
-   white-space: nowrap;
-   font-variant-numeric: tabular-nums
+  display: inline-flex;
+  gap: 10px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums
 }
 
 .bar.ind i {
-   width: 35%;
-   animation: load-sweep 1.3s ease-in-out infinite
+  width: 35%;
+  animation: load-sweep 1.3s ease-in-out infinite
 }
 
 .bar.busy {
-   background-image: repeating-linear-gradient(45deg, transparent 0 10px, rgba(127, 127, 127, .22) 10px 20px);
-   background-size: 28px 28px;
-   animation: load-stripes 1s linear infinite
+  background-image: repeating-linear-gradient(45deg, transparent 0 10px, rgba(127, 127, 127, .22) 10px 20px);
+  background-size: 28px 28px;
+  animation: load-stripes 1s linear infinite
 }
 
 .load.done .bar i {
-   background: var(--ok)
+  background: var(--ok)
 }
 
 @keyframes load-sweep {
-   0% {
-      transform: translateX(-100%)
-   }
+  0% {
+    transform: translateX(-100%)
+  }
 
-   100% {
-      transform: translateX(300%)
-   }
+  100% {
+    transform: translateX(300%)
+  }
 }
 
 @keyframes load-stripes {
-   to {
-      background-position: 28px 0
-   }
+  to {
+    background-position: 28px 0
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-   .bar.ind i {
-      animation: none;
-      width: 100%;
-      opacity: .45
-   }
+  .bar.ind i {
+    animation: none;
+    width: 100%;
+    opacity: .45
+  }
 
-   .bar.busy {
-      animation: none
-   }
+  .bar.busy {
+    animation: none
+  }
 }
 
 .fl-err {
-   color: var(--bad)
+  color: var(--bad)
 }
 
 .fl-err:empty {
-   display: none
+  display: none
 }
 
 /* Add cards: loaded files */
 .files {
-   list-style: none;
-   margin: 8px 0 0;
-   padding: 0
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0
 }
 
 .file {
-   display: flex;
-   gap: 12px;
-   align-items: flex-start;
-   padding: 10px 12px;
-   margin-bottom: 8px;
-   background: var(--bg);
-   border: 1px solid var(--line);
-   border-radius: 10px
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px
 }
 
 .file-ic {
-   flex: none;
-   display: grid;
-   place-items: center;
-   width: 26px;
-   height: 26px;
-   border-radius: 50%;
-   font: 700 14px "Bricolage Grotesque", system-ui, sans-serif;
-   color: var(--accInk);
-   background: var(--mute)
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font: 700 14px "Bricolage Grotesque", system-ui, sans-serif;
+  color: var(--accInk);
+  background: var(--mute)
 }
 
 .file.ok .file-ic {
-   background: var(--ok)
+  background: var(--ok)
 }
 
 .file.err .file-ic {
-   background: var(--bad)
+  background: var(--bad)
 }
 
 .file.warn .file-ic {
-   background: var(--mid)
+  background: var(--mid)
 }
 
 .file-body {
-   flex: 1;
-   min-width: 0
+  flex: 1;
+  min-width: 0
 }
 
 .file-name {
-   font-weight: 600;
-   word-break: break-word
+  font-weight: 600;
+  word-break: break-word
 }
 
 .file-note {
-   font-size: 15px;
-   color: var(--mute)
+  font-size: 15px;
+  color: var(--mute)
 }
 
 .file.err .file-note {
-   color: var(--bad)
+  color: var(--bad)
 }
 
 .file-more summary {
-   cursor: pointer;
-   margin-top: 4px;
-   font-size: 14px;
-   color: var(--acc)
+  cursor: pointer;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--acc)
 }
 
 .file-more ol {
-   max-height: 160px;
-   margin: 6px 0 0;
-   padding-left: 22px;
-   overflow: auto;
-   font-size: 14px
+  max-height: 160px;
+  margin: 6px 0 0;
+  padding-left: 22px;
+  overflow: auto;
+  font-size: 14px
 }
 
 /* Add cards: choose a way to make cards */
 .choice {
-   display: grid;
-   grid-template-columns: 1fr 1fr;
-   gap: 10px;
-   margin: 12px 0
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0
 }
 
 @media (max-width: 620px) {
-   .choice {
-      grid-template-columns: 1fr
-   }
+  .choice {
+    grid-template-columns: 1fr
+  }
 }
 
 .choice button {
-   display: flex;
-   flex-direction: column;
-   align-items: flex-start;
-   gap: 4px;
-   padding: 14px 16px;
-   font-weight: 400;
-   text-align: left;
-   border-radius: 12px
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 16px;
+  font-weight: 400;
+  text-align: left;
+  border-radius: 12px
 }
 
 .choice button b {
-   font-size: 16px
+  font-size: 16px
 }
 
 .choice button span {
-   font-size: 14px;
-   line-height: 1.4;
-   color: var(--mute)
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--mute)
 }
 
 .choice button.on {
-   color: var(--ink);
-   background: var(--surface);
-   border: 2px solid var(--acc);
-   padding: 13px 15px
+  color: var(--ink);
+  background: var(--surface);
+  border: 2px solid var(--acc);
+  padding: 13px 15px
 }
 
 .choice button.on b::before {
-   content: "\2713  ";
-   color: var(--acc)
+  content: "\2713  ";
+  color: var(--acc)
 }
 
 /* Review list: search, filters, full text */
 .toolbar {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 8px;
-   margin: 12px 0 4px
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 4px
 }
 
 .toolbar>* {
-   flex: 1 1 170px;
-   min-width: 0;
-   margin: 0
+  flex: 1 1 170px;
+  min-width: 0;
+  margin: 0
 }
 
 .toolbar>input[type="search"] {
-   flex: 2 1 220px
+  flex: 2 1 220px
 }
 
 .review .item .body div {
-   overflow: visible;
-   white-space: normal;
-   text-overflow: clip
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip
 }
 
 /* Account */
 .acct-in {
-   font-weight: 600
+  font-weight: 600
 }
 
 .fl-note {
-   margin: 12px 0 0;
-   padding: 10px 12px;
-   background: var(--bg);
-   border-radius: 8px
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 8px
 }
 
 #syncbox .load {
-   margin: 0 0 12px
+  margin: 0 0 12px
 }
 
 /* Multiple choice and short answers */
 .mc {
-   display: grid;
-   gap: 8px;
-   margin: 12px 0
+  display: grid;
+  gap: 8px;
+  margin: 12px 0
 }
 
 .mc-opt {
-   display: flex;
-   align-items: flex-start;
-   gap: 12px;
-   width: 100%;
-   padding: 12px 14px;
-   font-weight: 400;
-   font-size: 16px;
-   text-align: left;
-   border-radius: 10px
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  font-weight: 400;
+  font-size: 16px;
+  text-align: left;
+  border-radius: 10px
 }
 
 .mc-opt .mc-key {
-   flex: none;
-   display: inline-grid;
-   place-items: center;
-   width: 1.8em;
-   height: 1.8em;
-   border-radius: 50%;
-   font: 600 14px "Bricolage Grotesque", system-ui, sans-serif;
-   color: var(--mute);
-   background: var(--line)
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.8em;
+  height: 1.8em;
+  border-radius: 50%;
+  font: 600 14px "Bricolage Grotesque", system-ui, sans-serif;
+  color: var(--mute);
+  background: var(--line)
 }
 
 .mc-opt .mc-txt {
-   padding-top: .1em;
-   font-family: "Source Serif 4", Georgia, serif
+  padding-top: .1em;
+  font-family: "Source Serif 4", Georgia, serif
 }
 
 .mc-opt.right {
-   border-color: var(--ok);
-   background: var(--bg);
-   color: var(--ink);
-   opacity: 1;
-   box-shadow: inset 0 0 0 2px var(--ok)
+  border-color: var(--ok);
+  background: var(--bg);
+  color: var(--ink);
+  opacity: 1;
+  box-shadow: inset 0 0 0 2px var(--ok)
 }
 
 .mc-opt.right .mc-key {
-   color: var(--accInk);
-   background: var(--ok)
+  color: var(--accInk);
+  background: var(--ok)
 }
 
 .mc-opt.wrong {
-   border-color: var(--bad);
-   box-shadow: inset 0 0 0 2px var(--bad);
-   opacity: 1
+  border-color: var(--bad);
+  box-shadow: inset 0 0 0 2px var(--bad);
+  opacity: 1
 }
 
 .mc-opt.wrong .mc-key {
-   color: var(--accInk);
-   background: var(--bad)
+  color: var(--accInk);
+  background: var(--bad)
 }
 
 .mc-opt.dim {
-   opacity: .55
+  opacity: .55
 }
 
 .mc-opt:disabled {
-   cursor: default
+  cursor: default
 }
 
 .mc-fb.ok {
-   color: var(--ok)
+  color: var(--ok)
 }
 
 .mc-fb.bad {
-   color: var(--bad)
+  color: var(--bad)
 }
 
 .mc-list {
-   margin: 8px 0;
-   padding-left: 22px
+  margin: 8px 0;
+  padding-left: 22px
 }
 
 .mc-list li.right {
-   color: var(--ok);
-   font-weight: 600
+  color: var(--ok);
+  font-weight: 600
 }
 
 .mc-prev {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 4px 16px;
-   margin: 2px 0;
-   font-size: 14.5px;
-   color: var(--mute)
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 2px 0;
+  font-size: 14.5px;
+  color: var(--mute)
 }
 
 .mc-prev .right {
-   color: var(--ok);
-   font-weight: 600
+  color: var(--ok);
+  font-weight: 600
 }
 
 .mc-edit {
-   display: flex;
-   align-items: center;
-   gap: 10px
+  display: flex;
+  align-items: center;
+  gap: 10px
 }
 
 .mc-edit input[type="text"] {
-   margin: 4px 0
+  margin: 4px 0
 }
 
 textarea.short {
-   min-height: 48px;
-   height: 48px;
-   resize: none
+  min-height: 48px;
+  height: 48px;
+  resize: none
 }
 
 .rate button.sug {
-   box-shadow: inset 0 0 0 2px currentColor
+  box-shadow: inset 0 0 0 2px currentColor
 }
 
 /* Header: room to breathe */
 main {
-   padding-top: 32px
+  padding-top: 32px
 }
 
 header.top {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   flex-wrap: wrap;
-   gap: 16px 28px;
-   margin: 0 0 28px
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  margin: 0 0 28px
 }
 
 .brand h1 {
-   margin: 0
+  margin: 0
 }
 
 .brand .tag {
-   margin: 4px 0 0
+  margin: 4px 0 0
 }
 
 .tools {
-   display: flex;
-   align-items: center;
-   flex-wrap: wrap;
-   gap: 12px
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px
 }
 
 .tools select {
-   width: auto;
-   min-width: 190px;
-   margin: 0
+  width: auto;
+  min-width: 190px;
+  margin: 0
 }
 
 .tools button {
-   margin: 0
+  margin: 0
 }
 
 nav {
-   gap: 10px;
-   margin: 0 0 24px;
-   padding-bottom: 18px;
-   border-bottom: 1px solid var(--line)
+  gap: 10px;
+  margin: 0 0 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line)
 }
 
 nav button {
-   padding: 10px 18px
+  padding: 10px 18px
 }
 
 @media (max-width: 620px) {
-   .tools {
-      width: 100%
-   }
+  .tools {
+    width: 100%
+  }
 
-   .tools select {
-      flex: 1 1 100%;
-      width: 100%
-   }
+  .tools select {
+    flex: 1 1 100%;
+    width: 100%
+  }
 
-   header.top {
-      margin-bottom: 20px
-   }
+  header.top {
+    margin-bottom: 20px
+  }
 }
 
 /* Home screen: rows always fill the width */
 .dash-title {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   gap: 12px;
-   margin: 0 0 16px
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 16px
 }
 
 .dash {
-   display: flex;
-   flex-wrap: wrap;
-   align-items: stretch;
-   gap: 16px
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 16px
 }
 
 .dw {
-   box-sizing: border-box;
-   flex: 1 1 calc(50% - 16px);
-   min-width: min(260px, 100%);
-   padding: 20px;
-   background: var(--surface);
-   border: 1px solid var(--line);
-   border-radius: 12px
+  box-sizing: border-box;
+  flex: 1 1 calc(50% - 16px);
+  min-width: min(260px, 100%);
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px
 }
 
 .dw.sz-s {
-   flex-basis: calc(33.333% - 16px)
+  flex-basis: calc(33.333% - 16px)
 }
 
 .dw.sz-m {
-   flex-basis: calc(50% - 16px)
+  flex-basis: calc(50% - 16px)
 }
 
 .dw.sz-l {
-   flex-basis: calc(66.666% - 16px)
+  flex-basis: calc(66.666% - 16px)
 }
 
 .dw.sz-f {
-   flex-basis: 100%
+  flex-basis: 100%
 }
 
 @media (max-width: 700px) {
-   .dw {
-      flex-basis: 100% !important
-   }
+  .dw {
+    flex-basis: 100% !important
+  }
 }
 
 .dw.editing {
-   border: 2px dashed var(--acc);
-   padding: 19px
+  border: 2px dashed var(--acc);
+  padding: 19px
 }
 
 .dw.dragging {
-   opacity: .45
+  opacity: .45
 }
 
 .dw.dropt {
-   outline: 3px dashed var(--acc);
-   outline-offset: 3px
+  outline: 3px dashed var(--acc);
+  outline-offset: 3px
 }
 
 .grip {
-   margin-left: auto;
-   padding: 0 6px;
-   font-size: 22px;
-   line-height: 1;
-   color: var(--mute);
-   cursor: grab;
-   user-select: none
+  margin-left: auto;
+  padding: 0 6px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--mute);
+  cursor: grab;
+  user-select: none
 }
 
 .wedit {
-   display: flex;
-   flex-wrap: wrap;
-   align-items: center;
-   gap: 8px 14px;
-   margin: 0 0 14px;
-   padding: 10px;
-   background: var(--bg);
-   border-radius: 8px
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0 0 14px;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: 8px
 }
 
 .wsz {
-   display: flex;
-   gap: 4px
+  display: flex;
+  gap: 4px
 }
 
 .wopt {
-   font-weight: 400;
-   font-size: 14px
+  font-weight: 400;
+  font-size: 14px
 }
 
 .wedit select {
-   display: inline-block;
-   width: auto;
-   min-height: 32px;
-   margin: 0 0 0 6px;
-   padding: 4px 30px 4px 8px;
-   font-size: 14px
+  display: inline-block;
+  width: auto;
+  min-height: 32px;
+  margin: 0 0 0 6px;
+  padding: 4px 30px 4px 8px;
+  font-size: 14px
 }
 
 .wmv {
-   display: flex;
-   gap: 6px;
-   margin-left: auto
+  display: flex;
+  gap: 6px;
+  margin-left: auto
 }
 
 .editbar {
-   display: flex;
-   flex-wrap: wrap;
-   align-items: center;
-   justify-content: space-between;
-   gap: 12px 24px
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px
 }
 
 .editbar select {
-   width: auto;
-   min-width: 250px;
-   margin: 0
+  width: auto;
+  min-width: 250px;
+  margin: 0
 }
 
 .tray h3 {
-   margin: 0 0 4px
+  margin: 0 0 4px
 }
 
 .wnote {
-   min-height: 90px
+  min-height: 90px
 }
 
 .wnote-t {
-   margin: 0;
-   font-size: 18px;
-   white-space: pre-wrap
+  margin: 0;
+  font-size: 18px;
+  white-space: pre-wrap
 }
 
 /* Confirmation dialog and destructive buttons */
 button.danger {
-   color: var(--accInk);
-   background: var(--bad);
-   border-color: var(--bad);
-   font-weight: 600
+  color: var(--accInk);
+  background: var(--bad);
+  border-color: var(--bad);
+  font-weight: 600
 }
 
 button.danger:hover {
-   border-color: var(--bad);
-   filter: brightness(1.08)
+  border-color: var(--bad);
+  filter: brightness(1.08)
 }
 
 button.danger:disabled:hover {
-   filter: none
+  filter: none
 }
 
 dialog.cbox {
-   width: min(440px, calc(100vw - 32px));
-   padding: 24px;
-   color: var(--ink);
-   background: var(--surface);
-   border: 1px solid var(--line);
-   border-radius: 14px;
-   box-shadow: 0 20px 60px rgba(0, 0, 0, .35)
+  width: min(440px, calc(100vw - 32px));
+  padding: 24px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .35)
 }
 
 dialog.cbox::backdrop {
-   background: rgba(10, 15, 30, .55)
+  background: rgba(10, 15, 30, .55)
 }
 
 dialog.cbox h2 {
-   margin: 0 0 8px
+  margin: 0 0 8px
 }
 
 dialog.cbox p {
-   margin: 0;
-   color: var(--mute)
+  margin: 0;
+  color: var(--mute)
 }
 
 .cbtns {
-   justify-content: flex-end;
-   margin-top: 20px
+  justify-content: flex-end;
+  margin-top: 20px
 }
 
 /* Library: selection and bulk actions */
 .lib-top {
-   justify-content: space-between;
-   margin: 0 0 10px
+  justify-content: space-between;
+  margin: 0 0 10px
 }
 
 .bulkbar {
-   position: sticky;
-   top: 8px;
-   z-index: 4;
-   display: flex;
-   flex-wrap: wrap;
-   align-items: center;
-   gap: 8px 14px;
-   margin: 12px 0;
-   padding: 8px 12px;
-   background: var(--bg);
-   border: 1px solid var(--line);
-   border-radius: 10px
+  position: sticky;
+  top: 8px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 12px 0;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px
 }
 
 .bulkbar .grow {
-   flex: 1
+  flex: 1
 }
 
 .item input[type="checkbox"] {
-   margin-top: 4px
+  margin-top: 4px
 }
 
 /* Review list: the Add button stays at the top */
 .addbar {
-   position: sticky;
-   top: 8px;
-   z-index: 5;
-   display: flex;
-   flex-wrap: wrap;
-   align-items: flex-end;
-   gap: 12px;
-   margin: 14px 0;
-   padding: 12px 14px;
-   background: var(--surface);
-   border: 2px solid var(--acc);
-   border-radius: 12px;
-   box-shadow: 0 6px 18px rgba(0, 0, 0, .12)
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 2px solid var(--acc);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .12)
 }
 
 .addbar-deck {
-   flex: 1 1 220px
+  flex: 1 1 220px
 }
 
 .addbar-deck label {
-   margin-top: 0
+  margin-top: 0
 }
 
 .addbar-deck input {
-   margin-bottom: 0
+  margin-bottom: 0
 }
 
 .addbar .primary {
-   padding: 12px 20px
+  padding: 12px 20px
 }
 
 .tray {
-   margin-top: 16px
+  margin-top: 16px
 }
+
+/* Card lists on narrow screens: chips and buttons sit under the text instead of squeezing it */
+.item .body {
+  flex: 1 1 0;
+  min-width: 0
+}
+
+.item .body .chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  overflow: visible;
+  white-space: normal
+}
+
+.item .body .chips .acts {
+  display: flex;
+  gap: 6px;
+  margin-left: auto
+}
+
+.chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+/* Account: a quiet status dot instead of changing text */
+.acct-in::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--ok)
+}
+
+.acct-in[data-state="syncing"]::before {
+  background: var(--mid)
+}
+
+.acct-in[data-state="error"]::before {
+  background: var(--bad)
+}
+
+.acct-in[data-state="choose"]::before {
+  background: var(--mid)
+}
+
+/* Celebrations (js/fx.js). Settings > Animations turns them down or off. */
+@keyframes fx-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px)
+  }
+
+  to {
+    opacity: 1;
+    transform: none
+  }
+}
+
+@keyframes fx-pop {
+  0% {
+    transform: scale(1)
+  }
+
+  35% {
+    transform: scale(1.05)
+  }
+
+  70% {
+    transform: scale(.985)
+  }
+
+  100% {
+    transform: scale(1)
+  }
+}
+
+@keyframes fx-glow {
+  0% {
+    box-shadow: inset 0 0 0 2px var(--ok), 0 0 0 0 var(--ok)
+  }
+
+  100% {
+    box-shadow: inset 0 0 0 2px var(--ok), 0 0 0 16px transparent
+  }
+}
+
+@keyframes fx-shake {
+  20% {
+    transform: translateX(-7px)
+  }
+
+  40% {
+    transform: translateX(6px)
+  }
+
+  60% {
+    transform: translateX(-4px)
+  }
+
+  80% {
+    transform: translateX(3px)
+  }
+}
+
+@keyframes fx-bump {
+  0% {
+    transform: scale(.7);
+    opacity: 0
+  }
+
+  60% {
+    transform: scale(1.25)
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1
+  }
+}
+
+@keyframes fx-fly {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0) scale(1)
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.35)
+  }
+}
+
+@keyframes fx-fall {
+  to {
+    transform: translateY(108vh) rotate(720deg)
+  }
+}
+
+.panel.enter {
+  animation: fx-in .28s ease both
+}
+
+.mc-opt.right {
+  animation: fx-pop .5s ease, fx-glow .9s ease-out
+}
+
+.mc-opt.wrong {
+  animation: fx-shake .4s ease
+}
+
+.fl-last.win {
+  animation: fx-pop .6s ease;
+  color: var(--ok);
+  font-weight: 600
+}
+
+.combo {
+  font: 600 14px "Bricolage Grotesque", system-ui, sans-serif;
+  color: var(--mid);
+  animation: fx-bump .4s ease
+}
+
+.fx-layer {
+  position: fixed;
+  z-index: 200;
+  width: 0;
+  height: 0;
+  pointer-events: none
+}
+
+.fx-layer i {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: fx-fly .95s cubic-bezier(.2, .8, .3, 1) forwards
+}
+
+.fx-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  pointer-events: none
+}
+
+.fx-confetti i {
+  position: absolute;
+  top: -16px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  animation: fx-fall linear forwards
+}
+
+html[data-fx="off"] .panel.enter,
+html[data-fx="off"] .mc-opt,
+html[data-fx="off"] .fl-last,
+html[data-fx="off"] .combo {
+  animation: none
+}
+
+html[data-fx="calm"] .mc-opt.right {
+  animation: fx-pop .5s ease
+}
+
+html[data-fx="calm"] .mc-opt.wrong {
+  animation: none
+}
+
+@media (max-width: 620px) {
+  .addbar {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px
+  }
+
+  .addbar-deck {
+    flex: 1 1 auto;
+    min-width: 0
+  }
+
+  .addbar-deck label {
+    position: absolute;
+    left: -9999px
+  }
+
+  .addbar-deck input {
+    min-height: 40px;
+    margin: 0
+  }
+
+  .addbar .primary {
+    padding: 10px 14px;
+    white-space: nowrap
+  }
+
+  .addbar .long {
+    display: none
+  }
+}S

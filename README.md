@@ -11,6 +11,7 @@ Built for the TSA Software Development event. Everything runs in the browser. Th
 - **Import in three steps.** Add your material and see exactly what was read (slides, notes, pictures); choose ONE way to make cards (AI-written questions or automatic cards); then review with search and filters before adding. Progress bars show every slow step: reading files, writing questions with AI, downloading the on-device model and signing in.
 - **Accounts and saving online (optional).** Cards always save on the device. Signing in (with a free Puter account, in a pop-up) also saves decks, cards, progress and settings to the person's own Puter storage, so they can open them on any computer. Changes from several devices are merged, and deletions carry over. API keys are never saved online. Use *Sign out and remove my cards from this device* on shared computers.
 - **AI questions blended across lessons.** With several files loaded, each lesson gets its own share of questions (Automatic scales with how much content there is), the lessons are interleaved, and extra questions connect them. A coverage check lists slides that no question refers to and can write questions for them.
+- **Ten themes and celebrations.** Match-my-device, Light, Dark, Matte black, Ocean, Violet, Rose, Paper, Sage and High contrast, from the *Theme* menu or Settings (remembered, and synced with an account). Correct answers get a pop and a burst, streaks show a counter, learning a card and finishing a session are celebrated with confetti and counting numbers, and optional sound effects can be switched on. Settings > Animations sets full, calm or off, and follows the device's reduced-motion setting by default.
 - **Customizable home screen.** Today, progress by stage, streak, daily goal, review forecast, activity map, decks, trouble spots and a personal note. In *Customize*, drag sections (or use the arrows), give each a size (small, medium, large, full), hide or add them back, set options such as forecast length, or start from a ready-made layout. Rows always fill the width, so there are no gaps, and it collapses to one column on phones.
 - **Safe deleting.** Delete one card or many at once in the Library (select, search and filter first). Every destructive action asks for confirmation first: deleting cards or decks, removing duplicates, replacing AI questions, resetting counters and clearing a shared computer.
 - **One guided session.** Press *Start studying* on Today. Recall runs the reviews that are due, then teaches a few new cards and quizzes them, with a step tracker, a progress bar, a note after every answer, and a summary at the end that shows how far you are through the deck. *Practice* goes through every card without changing the schedule.
@@ -61,6 +62,9 @@ js/ai.js              optional AI question writing: Puter, Chrome built-in, Gemi
 js/import-view.js     import screen and the review-before-add list
 js/library.js         library with search, filters, bulk delete and all exports
 js/ui.js              confirmation dialog
+js/theme.js           theme menu, theme picker and effects settings
+js/fx.js              bursts, confetti, count-up numbers and sound effects
+css/themes.css        the extra themes
 js/app.js             boot
 sample/               files to try the importers with
 tools/bundle.py       builds a single-file version: python3 tools/bundle.py > recall.html

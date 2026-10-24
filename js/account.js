@@ -36,7 +36,7 @@ function mergeInto(L, R) {
   L.log = L.log || {};
   Object.keys(R.log || {}).forEach(function (k) {
     var a = L.log[k], b = R.log[k];
-    if (!a) { L.log[k] = Object.assign({}, b); chg.local = true } else ["r", "c", "l", "q"].forEach(function (f) { if ((b[f] || 0) > (a[f] || 0)) { a[f] = b[f]; chg.local = true } else if ((b[f] || 0) < (a[f] || 0)) chg.cloud = true })
+    if (!a) { L.log[k] = Object.assign({}, b); chg.local = true } else["r", "c", "l", "q"].forEach(function (f) { if ((b[f] || 0) > (a[f] || 0)) { a[f] = b[f]; chg.local = true } else if ((b[f] || 0) < (a[f] || 0)) chg.cloud = true })
   });
   Object.keys(L.log).forEach(function (k) { if (!(R.log || {})[k]) chg.cloud = true });
   if ((R.updated || 0) > (L.updated || 0)) {
@@ -60,22 +60,27 @@ async function cloudRead(p) {
 async function cloudSync(why) {
   if (!ACCT.user) return;
   if (ACCT.busy) { ACCT.again = true; return }
+  /* background saves are silent (only the small dot next to your name changes); loading and "Save now" show a progress bar */
+  var loud = why === "pull" || why === "push", shown = false, barT = 0;
   ACCT.busy = true; clearTimeout(ACCT.tm); ACCT.state = "syncing"; acctPaint();
-  progSet("sync", null, why === "pull" ? "Loading your saved cards\u2026" : "Saving to your account\u2026", true);
+  if (loud) barT = setTimeout(function () { shown = true; progSet("sync", null, why === "pull" ? "Loading your saved cards\u2026" : "Saving to your account\u2026", true) }, why === "pull" ? 900 : 0);
   try {
     var p = await aiLoadPuter(), remote = await cloudRead(p), chg = { local: false, cloud: false };
     if (remote) chg = mergeInto(DB, remote);
     if (chg.local) { DB.cards.forEach(function (c) { if (!c.stage) c.stage = "review"; c.u = c.u || 0 }); normWidgets(); await saveLocalNow() }
     if (ACCT.dirty || !remote || chg.cloud) { ACCT.dirty = false; await p.fs.write(CLOUD_FILE, JSON.stringify(cloudPayload()), { overwrite: true, dedupeName: false, createMissingParents: true }) }
     ACCT.at = Date.now(); ACCT.state = "saved"; ACCT.msg = "";
-    progDone("sync", "Saved to your account"); setTimeout(function () { if (!ACCT.busy) progHide("sync") }, 1500);
+    clearTimeout(barT); if (shown) { progDone("sync", "Saved to your account"); setTimeout(function () { if (!ACCT.busy) progHide("sync") }, 1200) } else progHide("sync")
+    if (chg.local) { applyTheme(); applyFx() }
     if (chg.local) { if (tab === "study" || tab === "import" || tab === "add") shell(); else render() }
   } catch (e) {
-    ACCT.state = "error"; ACCT.dirty = true; ACCT.msg = "Couldn't reach your account (" + aiErr(e, "no connection") + "). Your cards are safe on this device and will save when the connection is back.";
+    clearTimeout(barT); ACCT.state = "error"; ACCT.dirty = true; ACCT.msg = "Couldn't reach your account (" + aiErr(e, "no connection") + "). Your cards are safe on this device and will save when the connection is back.";
     progHide("sync"); ACCT.tm = setTimeout(function () { cloudSync("auto") }, 60000)
   } finally { ACCT.busy = false; acctPaint(); if (ACCT.again) { ACCT.again = false; cloudDirty() } }
 }
-function cloudDirty() { ACCT.dirty = true; if (!ACCT.user || ACCT.state === "choose") return; clearTimeout(ACCT.tm); ACCT.tm = setTimeout(function () { cloudSync("auto") }, 4000); acctPaint() }
+function cloudDirty() { ACCT.dirty = true; if (!ACCT.user || ACCT.state === "choose") return; clearTimeout(ACCT.tm); ACCT.tm = setTimeout(function () { cloudSync("auto") }, 15000); acctPaint() }
+/* save right away at natural stopping points (pausing, finishing a session, closing the tab) */
+function cloudFlush() { if (ACCT.user && ACCT.dirty && ACCT.state !== "choose" && !ACCT.busy) { clearTimeout(ACCT.tm); cloudSync("auto") } }
 /* ---- signing in and out ---- */
 async function acctReady(name) {
   ACCT.user = name; DB.settings.acct = name;
@@ -103,7 +108,7 @@ async function acctSignOut(clear) {
 }
 async function acctBoot() {
   if (!DB.settings.acct) return;
-  ACCT.user = DB.settings.acct; ACCT.state = "syncing"; acctPaint(); progSet("sync", null, "Checking your account\u2026", true);
+  ACCT.user = DB.settings.acct; ACCT.state = "syncing"; acctPaint();
   try {
     var p = await aiLoadPuter();
     if (await p.auth.isSignedIn()) { var u = await p.auth.getUser(); await acctReady(u.username) }
@@ -139,7 +144,7 @@ function acctWire() {
 }
 function acctPaint() {
   var b = document.getElementById("acct");
-  if (b) { b.textContent = ACCT.user ? (ACCT.state === "syncing" ? "\u27f3 " : ACCT.state === "error" ? "! " : "\u2713 ") + ACCT.user : "Sign in"; b.title = ACCT.user ? acctStatus() : "Sign in to save your cards online"; b.className = ACCT.user ? "acct-in" : "" }
+  if (b) { b.textContent = ACCT.user || "Sign in"; b.title = ACCT.user ? acctStatus() : "Sign in to save your cards online"; b.className = ACCT.user ? "acct-in" : ""; b.dataset.state = ACCT.user ? ACCT.state : ""; b.setAttribute("aria-label", ACCT.user ? "Account: " + ACCT.user + ". " + acctStatus() : "Sign in") }
   var p = document.getElementById("acctpanel"); if (p) { p.innerHTML = acctInner(); acctWire() }
 }
 document.addEventListener("visibilitychange", function () {

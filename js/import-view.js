@@ -110,13 +110,16 @@ function visibleItems() {
 }
 function itemHTML(x, i) {
   var c = x.c;
-  return '<div class="item"><input type="checkbox" data-i="' + i + '" aria-label="Include card"' + (x.on ? " checked" : "") + '>' + (c.img ? '<img alt="" src="' + c.img + '">' : "") + '<div class="body"><div>' + esc((c.q || "").replace(/\n/g, " ")) + '</div>' + (c.ch ? '<div class="mc-prev">' + c.ch.map(function (x, i) { return '<span class="' + (i === c.ci ? "right" : "") + '">' + "ABCDEF"[i] + ") " + esc(x) + (i === c.ci ? " \u2713" : "") + '</span>' }).join("") + '</div>' : "") + '<div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div>' + (c.note ? '<div class="a"><b>Check:</b> ' + esc(c.note) + '</div>' : "") + '</div>' + (x.dup ? '<span class="chip warn">duplicate</span>' : "") + (c.ai ? '<span class="chip">AI</span>' : "") + (imp.multiSrc && c.file ? '<span class="chip">' + esc(aiShort(c.file)) + '</span>' : "") + '<span class="chip">' + kind(c) + '</span></div>'
+  return '<div class="item"><input type="checkbox" data-i="' + i + '" aria-label="Include card"' + (x.on ? " checked" : "") + '>' + (c.img ? '<img alt="" src="' + c.img + '">' : "") + '<div class="body"><div>' + esc((c.q || "").replace(/\n/g, " ")) + '</div>' +
+    (c.ch ? '<div class="mc-prev">' + c.ch.map(function (x, i) { return '<span class="' + (i === c.ci ? "right" : "") + '">' + "ABCDEF"[i] + ") " + esc(x) + (i === c.ci ? " \u2713" : "") + '</span>' }).join("") + '</div>' : "") +
+    '<div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div>' + (c.note ? '<div class="a"><b>Check:</b> ' + esc(c.note) + '</div>' : "") +
+    '<div class="chips">' + (x.dup ? '<span class="chip warn">duplicate</span>' : "") + (c.ai ? '<span class="chip">AI</span>' : "") + (imp.multiSrc && c.file ? '<span class="chip">' + esc(aiShort(c.file)) + '</span>' : "") + '<span class="chip">' + kind(c) + '</span></div></div></div>'
 }
 function paintCounts() {
   var on = imp.items.filter(function (x) { return x.on }).length, vis = visibleItems(), hidden = on - vis.filter(function (p) { return p.x.on }).length;
   var ct = $("#icount"); if (ct) ct.textContent = "Showing " + vis.length + " of " + imp.items.length + " cards";
   var hd = $("#ihid"); if (hd) hd.textContent = hidden > 0 ? hidden + " selected card" + (hidden > 1 ? "s are" : " is") + " hidden by your search or filters and will still be added." : "";
-  var ad = $("#ad"); if (ad) { ad.textContent = "Add " + on + " selected card" + (on === 1 ? "" : "s"); ad.disabled = !on }
+  var ad = $("#ad"); if (ad) { ad.innerHTML = "Add " + on + '<span class="long"> selected card' + (on === 1 ? "" : "s") + "</span>"; ad.disabled = !on }
 }
 function paintList() {
   var box = $("#ilist"); if (!box) return; var vis = visibleItems();

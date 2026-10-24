@@ -12,7 +12,7 @@ function libFiltered() {
 /* changing the search or a filter drops hidden cards from the selection, so "Delete selected" can never remove cards you can't see */
 function libPrune() { var ids = {}; libFiltered().forEach(function (c) { ids[c.id] = 1 }); Object.keys(LIB.sel).forEach(function (k) { if (!ids[k]) delete LIB.sel[k] }) }
 function libItem(c) {
-    return '<div class="item"><input type="checkbox" data-sel="' + c.id + '" aria-label="Select card"' + (LIB.sel[c.id] ? " checked" : "") + '>' + (c.img ? '<img alt="" src="' + c.img + '">' : "") + '<div class="body"><div>' + esc(c.q.replace(/\n/g, " ") || "(picture or audio)") + '</div><div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div></div><span class="chip">' + kind(c) + ' \u00b7 ' + stageLabel(c) + '</span><button class="sm" data-ed="' + c.id + '">Edit</button><button class="sm" data-del="' + c.id + '" aria-label="Delete card">\u00d7</button></div>'
+    return '<div class="item"><input type="checkbox" data-sel="' + c.id + '" aria-label="Select card"' + (LIB.sel[c.id] ? " checked" : "") + '>' + (c.img ? '<img alt="" src="' + c.img + '">' : "") + '<div class="body"><div>' + esc(c.q.replace(/\n/g, " ") || "(picture or audio)") + '</div><div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div><div class="chips"><span class="chip">' + kind(c) + ' \u00b7 ' + stageLabel(c) + '</span><span class="acts"><button class="sm" data-ed="' + c.id + '">Edit</button><button class="sm" data-del="' + c.id + '" aria-label="Delete card">\u00d7</button></span></div></div></div>'
 }
 function libPaint() {
     var list = libFiltered(), box = $("#liblist"); if (!box) return;

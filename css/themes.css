@@ -1,0 +1,220 @@
+/* Extra themes. Each one sets every colour token that styles.css uses, so the whole app follows it.
+   "Match my device" removes data-theme and uses the light/dark rules in styles.css. Loaded after styles.css. */
+:root[data-theme="matte"] {
+   color-scheme: dark;
+   --bg: #0a0a0b;
+   --surface: #141415;
+   --ink: #ededf0;
+   --mute: #9b9ba4;
+   --line: #2a2a2e;
+   --acc: #f1f1f4;
+   --accInk: #0a0a0b;
+   --ok: #57d39b;
+   --mid: #e6b04f;
+   --bad: #ff7b7b;
+   --mark: #3a3418
+}
+
+:root[data-theme="ocean"] {
+   color-scheme: dark;
+   --bg: #06141a;
+   --surface: #0c212b;
+   --ink: #e4f4f7;
+   --mute: #8fb2bb;
+   --line: #1c3a46;
+   --acc: #3dd6e0;
+   --accInk: #04181d;
+   --ok: #5fe0a5;
+   --mid: #f0b95a;
+   --bad: #ff8383;
+   --mark: #3b3a1c
+}
+
+:root[data-theme="rose"] {
+   color-scheme: dark;
+   --bg: #150a10;
+   --surface: #211019;
+   --ink: #f9eaf0;
+   --mute: #c39aab;
+   --line: #3c2230;
+   --acc: #ff7aa8;
+   --accInk: #2a0a17;
+   --ok: #6fdca8;
+   --mid: #f2b35c;
+   --bad: #ff8a8a;
+   --mark: #4a3320
+}
+
+:root[data-theme="violet"] {
+   color-scheme: dark;
+   --bg: #100c1d;
+   --surface: #1a1430;
+   --ink: #eee9ff;
+   --mute: #aaa0cf;
+   --line: #30275a;
+   --acc: #b49cff;
+   --accInk: #160f33;
+   --ok: #62d9a0;
+   --mid: #efb35a;
+   --bad: #ff8a9a;
+   --mark: #433a1f
+}
+
+:root[data-theme="paper"] {
+   color-scheme: light;
+   --bg: #f4efe4;
+   --surface: #fffaf0;
+   --ink: #2a2316;
+   --mute: #6e6451;
+   --line: #ddd2bb;
+   --acc: #b24a1a;
+   --accInk: #ffffff;
+   --ok: #2f7d4f;
+   --mid: #8f5a00;
+   --bad: #b53a3a;
+   --mark: #f6e3a0
+}
+
+:root[data-theme="sage"] {
+   color-scheme: light;
+   --bg: #eef3ee;
+   --surface: #fcfffc;
+   --ink: #17261d;
+   --mute: #556b5d;
+   --line: #cfdccf;
+   --acc: #2c7a52;
+   --accInk: #ffffff;
+   --ok: #1f7a4a;
+   --mid: #a06a00;
+   --bad: #b43a3a;
+   --mark: #e6efb5
+}
+
+:root[data-theme="contrast"] {
+   color-scheme: dark;
+   --bg: #000000;
+   --surface: #0b0b0b;
+   --ink: #ffffff;
+   --mute: #d0d0d0;
+   --line: #8a8a8a;
+   --acc: #ffe600;
+   --accInk: #000000;
+   --ok: #5cff9d;
+   --mid: #ffb347;
+   --bad: #ff7070;
+   --mark: #5a4a00
+}
+
+:root[data-theme="light"] {
+   color-scheme: light
+}
+
+:root[data-theme="dark"] {
+   color-scheme: dark
+}
+
+/* Theme menu and swatches */
+.tmenu {
+   position: fixed;
+   z-index: 150;
+   width: min(280px, calc(100vw - 24px));
+   max-height: min(70vh, 520px);
+   overflow: auto;
+   padding: 8px;
+   background: var(--surface);
+   border: 1px solid var(--line);
+   border-radius: 14px;
+   box-shadow: 0 18px 50px rgba(0, 0, 0, .35)
+}
+
+.tmenu h3 {
+   margin: 6px 8px 6px;
+   font-size: 13px;
+   font-weight: 500;
+   text-transform: uppercase;
+   letter-spacing: .04em;
+   color: var(--mute)
+}
+
+.topt {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   width: 100%;
+   margin: 0 0 2px;
+   padding: 8px 10px;
+   text-align: left;
+   font-weight: 500;
+   background: transparent;
+   border: 1px solid transparent;
+   border-radius: 10px
+}
+
+.topt:hover {
+   background: var(--bg);
+   border-color: var(--line)
+}
+
+.topt[aria-checked="true"] {
+   border-color: var(--acc)
+}
+
+.topt .tn {
+   flex: 1
+}
+
+.topt .tc {
+   color: var(--acc);
+   font-weight: 700
+}
+
+.swatch {
+   flex: none;
+   display: inline-flex;
+   width: 46px;
+   height: 28px;
+   overflow: hidden;
+   border: 1px solid var(--line);
+   border-radius: 8px
+}
+
+.swatch i {
+   flex: 1;
+   display: block
+}
+
+.swatch i:nth-child(3) {
+   flex: .7
+}
+
+.tgrid {
+   display: grid;
+   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+   gap: 10px;
+   margin: 10px 0
+}
+
+.tgrid .topt {
+   flex-direction: column;
+   align-items: stretch;
+   gap: 8px;
+   padding: 10px;
+   border: 1px solid var(--line);
+   background: var(--bg)
+}
+
+.tgrid .topt .swatch {
+   width: 100%;
+   height: 40px
+}
+
+.tgrid .topt[aria-checked="true"] {
+   border: 2px solid var(--acc);
+   padding: 9px
+}
+
+.tgrid .tline {
+   display: flex;
+   align-items: center;
+   gap: 6px
+}
