@@ -12,7 +12,7 @@ function libFiltered() {
 /* changing the search or a filter drops hidden cards from the selection, so "Delete selected" can never remove cards you can't see */
 function libPrune() { var ids = {}; libFiltered().forEach(function (c) { ids[c.id] = 1 }); Object.keys(LIB.sel).forEach(function (k) { if (!ids[k]) delete LIB.sel[k] }) }
 function libItem(c) {
-    return '<div class="item"><input type="checkbox" data-sel="' + c.id + '" aria-label="Select card"' + (LIB.sel[c.id] ? " checked" : "") + '>' + (c.img ? '<img alt="" src="' + c.img + '">' : "") + '<div class="body"><div>' + esc(c.q.replace(/\n/g, " ") || "(picture or audio)") + '</div><div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div><div class="chips"><span class="chip">' + kind(c) + ' \u00b7 ' + stageLabel(c) + '</span><span class="acts"><button class="sm" data-ed="' + c.id + '">Edit</button><button class="sm" data-del="' + c.id + '" aria-label="Delete card">\u00d7</button></span></div></div></div>'
+    return '<div class="item"><input type="checkbox" data-sel="' + c.id + '" aria-label="Select card"' + (LIB.sel[c.id] ? " checked" : "") + '>' + (c.img ? '<img alt="" src="' + c.img + '">' : "") + '<div class="body"><div>' + esc(c.q.replace(/\n/g, " ") || "(picture or audio)") + '</div><div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div><div class="chips"><span class="chip">' + kind(c) + ' \u00b7 ' + stageLabel(c) + '</span>' + (c.cx && c.cx.some(Boolean) ? '<span class="chip">explained</span>' : "") + '<span class="acts"><button class="sm" data-ed="' + c.id + '">Edit</button><button class="sm" data-del="' + c.id + '" aria-label="Delete card">\u00d7</button></span></div></div></div>'
 }
 function libPaint() {
     var list = libFiltered(), box = $("#liblist"); if (!box) return;
@@ -20,15 +20,17 @@ function libPaint() {
     var all = scoped().length, n = Object.keys(LIB.sel).filter(function (k) { return LIB.sel[k] && DB.cards.some(function (c) { return c.id === k }) }).length;
     $("#libcount").textContent = "Showing " + list.length + " of " + all + " cards";
     $("#lselct").textContent = n ? n + " selected" : "None selected";
-    var d = $("#ldel"); d.disabled = !n; d.textContent = n ? "Delete " + n + " selected" : "Delete selected";
+    var d = $("#ldel"); d.disabled = !n; d.textContent = n ? "Delete " + n + " selected" : "Delete selected"; libExplainBtn();
     var sa = $("#lall"), shown = list.filter(function (c) { return LIB.sel[c.id] }).length; sa.checked = list.length > 0 && shown === list.length; sa.indeterminate = shown > 0 && shown < list.length;
     box.querySelectorAll("[data-sel]").forEach(function (c) { c.onchange = function () { if (c.checked) LIB.sel[c.dataset.sel] = true; else delete LIB.sel[c.dataset.sel]; libPaintCounts() } });
     box.querySelectorAll("[data-ed]").forEach(function (b) { b.onclick = function () { var c = DB.cards.find(function (x) { return x.id === b.dataset.ed }); form = formFrom(c); tab = "add"; render() } });
     box.querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { var c = DB.cards.find(function (x) { return x.id === b.dataset.del }); libDelete([c.id], 'Delete this card?', '"' + (c.q || "(picture or audio)").replace(/\n/g, " ").slice(0, 90) + '" and its study progress will be deleted. This can\'t be undone.') } })
 }
+function libExplainable() { return DB.cards.filter(function (c) { return LIB.sel[c.id] && aiNeedsExplain(c) }) }
+function libExplainBtn() { var n = libExplainable().length, b = $("#lexp"); if (b) { b.disabled = !n; b.textContent = n ? "Add choice explanations (" + n + ")" : "Add choice explanations" } }
 function libPaintCounts() {
     var list = libFiltered(), n = Object.keys(LIB.sel).filter(function (k) { return LIB.sel[k] && DB.cards.some(function (c) { return c.id === k }) }).length;
-    $("#lselct").textContent = n ? n + " selected" : "None selected"; var d = $("#ldel"); d.disabled = !n; d.textContent = n ? "Delete " + n + " selected" : "Delete selected";
+    $("#lselct").textContent = n ? n + " selected" : "None selected"; var d = $("#ldel"); d.disabled = !n; d.textContent = n ? "Delete " + n + " selected" : "Delete selected"; libExplainBtn();
     var sa = $("#lall"), shown = list.filter(function (c) { return LIB.sel[c.id] }).length; sa.checked = list.length > 0 && shown === list.length; sa.indeterminate = shown > 0 && shown < list.length
 }
 async function libDelete(ids, title, body) {
@@ -44,13 +46,22 @@ function libView(v) {
         '<div class="toolbar"><input type="search" id="sq" placeholder="Search cards" aria-label="Search cards" value="' + esc(LIB.q) + '">' +
         '<select id="lft" aria-label="Card type">' + [["all", "All types"], ["choice", "Multiple choice"], ["text", "Text"], ["fill-in", "Fill-in"], ["image", "Image"], ["audio", "Audio"]].map(function (t) { return '<option value="' + t[0] + '"' + (LIB.ft === t[0] ? " selected" : "") + '>' + t[1] + '</option>' }).join("") + '</select>' +
         '<select id="lfs" aria-label="Learning stage">' + [["all", "All stages"], ["new", "New"], ["learning", "Learning"], ["reviewing", "Reviewing"], ["mastered", "Mastered"]].map(function (t) { return '<option value="' + t[0] + '"' + (LIB.fs === t[0] ? " selected" : "") + '>' + t[1] + '</option>' }).join("") + '</select></div>' +
-        '<div class="bulkbar"><label class="inl"><input type="checkbox" id="lall"> Select all shown</label><span class="hint" id="lselct"></span><span class="grow"></span><button class="sm" id="lclr" type="button">Clear selection</button><button class="sm danger" id="ldel" type="button" disabled>Delete selected</button></div>' +
+        '<div class="bulkbar"><label class="inl"><input type="checkbox" id="lall"> Select all shown</label><span class="hint" id="lselct"></span><span class="grow"></span><button class="sm" id="lclr" type="button">Clear selection</button><button class="sm" id="lexp" type="button" disabled>Add choice explanations</button><button class="sm danger" id="ldel" type="button" disabled>Delete selected</button></div>' + progHTML("libprog", "") + '<p class="hint fl-err" id="libmsg" role="status"></p>' +
         '<div id="liblist"></div>' + (DB.cur !== "all" ? '<div class="row"><button class="sm danger" id="dd" type="button">Delete this deck and its cards</button></div>' : "") + '</div>';
     libPaint();
     $("#sq").oninput = function () { LIB.q = this.value; libPrune(); libPaint() };
     $("#lft").onchange = function () { LIB.ft = this.value; libPrune(); libPaint() }; $("#lfs").onchange = function () { LIB.fs = this.value; libPrune(); libPaint() };
     $("#lall").onchange = function () { var on = this.checked; libFiltered().forEach(function (c) { if (on) LIB.sel[c.id] = true; else delete LIB.sel[c.id] }); libPaint() };
     $("#lclr").onclick = function () { LIB.sel = {}; libPaint() };
+    $("#lexp").onclick = async function () {
+        var cs = libExplainable(); if (!cs.length) return; var P = AI_PROV[aiProvider()], btn = this, msg = $("#libmsg"); msg.textContent = "";
+        if (!(await askConfirm({ title: "Write explanations for " + cs.length + " card" + (cs.length === 1 ? "" : "s") + "?", body: "Each choice gets a one-sentence reason it is right or wrong, written with " + P.name + ". The questions and choices are not changed.", ok: "Write explanations" }))) return;
+        btn.disabled = true; progSet("libprog", null, "Getting ready\u2026", true); var stopT = progTimer("libprog");
+        try {
+            var n = await aiExplainChoices(cs, { report: function (t, pct, busy) { progSet("libprog", pct == null ? null : pct, t, busy) } });
+            stopT(); save(); progDone("libprog", "Added explanations to " + n + " of " + cs.length + " cards"); libPaint(); if (n < cs.length) msg.textContent = "The AI skipped " + (cs.length - n) + " card" + (cs.length - n === 1 ? "" : "s") + ". Select them and try again."
+        } catch (e) { stopT(); progHide("libprog"); msg.textContent = e.message || "Something went wrong."; libExplainBtn() }
+    };
     $("#ldel").onclick = function () { var ids = Object.keys(LIB.sel).filter(function (k) { return LIB.sel[k] && DB.cards.some(function (c) { return c.id === k }) }); libDelete(ids, "Delete " + ids.length + " card" + (ids.length === 1 ? "" : "s") + "?", "They and their study progress will be deleted. This can't be undone.") };
     if ($("#dd")) $("#dd").onclick = async function () {
         var id = DB.cur, n = DB.cards.filter(function (c) { return c.deck === id }).length;

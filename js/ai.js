@@ -2,7 +2,7 @@
    puter = Puter.js (free Puter account, nothing to install, no key), chrome = Chrome's built-in on-device model (no key), gemini = Google Gemini API (free key), claude = Anthropic API (key; no key needed inside Claude).
    Slide/document text is the only thing ever sent, and only to the provider you pick (nothing is sent for chrome). */
 var AI_FORMS = {
-  mc: "{\"type\": \"mc\", \"q\": \"question\", \"correct\": \"the correct choice\", \"wrong\": [\"wrong choice\", \"wrong choice\", \"wrong choice\"], \"a\": \"1-2 sentence explanation of why the correct choice is right\", \"src\": \"title of the main slide or section\", \"note\": \"\"}",
+  mc: "{\"type\": \"mc\", \"q\": \"question\", \"correct\": \"the correct choice\", \"why_correct\": \"one sentence: why this choice is right\", \"wrong\": [{\"c\": \"wrong choice\", \"why\": \"one sentence: the misconception or reason this choice fails\"}, {\"c\": \"wrong choice\", \"why\": \"...\"}, {\"c\": \"wrong choice\", \"why\": \"...\"}], \"a\": \"optional one-sentence takeaway\", \"src\": \"title of the main slide or section\", \"note\": \"\"}",
   short: "{\"type\": \"short\", \"q\": \"question\", \"a\": \"the answer: one word or a short phrase\", \"alt\": [\"other accepted wording\"], \"src\": \"title of the main slide or section\", \"note\": \"\"}",
   explain: "{\"type\": \"explain\", \"q\": \"question\", \"a\": \"model answer\", \"src\": \"title of the main slide or section\", \"note\": \"\"}",
   cloze: "{\"type\": \"cloze\", \"q\": \"a sentence with {{c1::hidden words}}\", \"a\": \"\", \"src\": \"title of the main slide or section\", \"note\": \"\"}"
@@ -27,7 +27,7 @@ function aiSystem(json, style) {
     "",
     "Card types. " + st.mix
   ];
-  if (st.types.indexOf("mc") > -1) lines.push("- mc (multiple choice): one question, one correct choice and exactly three wrong choices. The wrong choices must be plausible: base them on real misconceptions or on ideas that are true but answer a different question. Keep all four choices similar in length and style, never make the correct one the longest, and never use \"all of the above\", \"none of the above\" or \"both A and B\". Choices are short (under 12 words). The question must be answerable without seeing the choices. Do not give away the answer in the wording of the question. Put the explanation in \"a\".");
+  if (st.types.indexOf("mc") > -1) lines.push("- mc (multiple choice): one question, one correct choice and exactly three wrong choices. The wrong choices must be plausible: base them on real misconceptions or on ideas that are true but answer a different question. Keep all four choices similar in length and style, never make the correct one the longest, and never use \"all of the above\", \"none of the above\" or \"both A and B\". Choices are short (under 12 words). The question must be answerable without seeing the choices. Do not give away the answer in the wording of the question. Explain EVERY choice: \"why_correct\" says why the right choice is right, and each wrong choice has a \"why\" naming the specific misconception or reason it fails (never just \"this is incorrect\"). Use \"a\" only for an optional one-sentence takeaway.");
   if (st.types.indexOf("short") > -1) lines.push("- short (short answer): the answer is ONE word or a short phrase of at most five words, and the question must have one clear answer (list other accepted wordings in \"alt\"). Ask for a term, a name, a quantity, a direction (increase or decrease) or a cause, not a description.");
   if (st.types.indexOf("explain") > -1) lines.push("- explain: the answer is a short model answer (1 to 3 sentences) that includes the reasoning.");
   if (st.types.indexOf("cloze") > -1) lines.push("- cloze (fill-in-the-blank): a complete sentence with the key term wrapped like {{c1::hidden words}}, with enough context to be answerable.");
@@ -75,13 +75,16 @@ function aiChunks(secs, max) {
   secs.forEach(function (s) { var p = aiPiece(s).slice(0, max); if (!cur || cur.len + p.length > max) { cur = { text: "", len: 0 }; chunks.push(cur) } cur.text += (cur.text ? "\n\n" : "") + p; cur.len += p.length });
   return chunks
 }
-function aiParse(text) {
+function aiJsonList(text) {
   text = String(text).replace(/```(?:json)?/gi, "").trim();
   var list = [], j = null; try { j = JSON.parse(text) } catch (e) { }
-  if (j) list = Array.isArray(j) ? j : Array.isArray(j.cards) ? j.cards : [j];
+  if (j) list = Array.isArray(j) ? j : Array.isArray(j.cards) ? j.cards : Array.isArray(j.items) ? j.items : [j];
   else text.split(/\r?\n/).forEach(function (l) { l = l.trim().replace(/,$/, ""); if (l.charAt(0) !== "{") return; try { list.push(JSON.parse(l)) } catch (e) { } });
+  return list
+}
+function aiParse(text) {
   var out = [];
-  list.forEach(function (o) {
+  aiJsonList(text).forEach(function (o) {
     if (!o) return; var q = String(o.q || "").trim(), a = String(o.a || "").trim(), type = String(o.type || "").toLowerCase();
     if (!q) return;
     var card = { q: q, a: a, src: String(o.src || ""), note: String(o.note || "").trim(), ai: true };
@@ -89,9 +92,13 @@ function aiParse(text) {
     if (Array.isArray(o.choices) && /^[A-Da-d]$/.test(cor)) cor = String(o.choices["ABCD".indexOf(cor.toUpperCase())] || "").trim();
     if (type === "mc" || (cor && wr.length)) {
       var seen = {}; seen[cor.toLowerCase()] = 1;
-      wr = wr.map(function (x) { return String(x).trim() }).filter(function (x) { if (!x || seen[x.toLowerCase()]) return false; seen[x.toLowerCase()] = 1; return true }).slice(0, 4);
-      if (!cor || wr.length < 2) return;
-      var opts = shuffle([cor].concat(wr)); card.ch = opts; card.ci = opts.indexOf(cor); card.a = cor + (a ? "\n" + a : "")
+      var opts = wr.map(function (x) { return typeof x === "object" && x ? { t: String(x.c || x.choice || x.text || "").trim(), why: String(x.why || x.explanation || "").trim() } : { t: String(x).trim(), why: "" } })
+        .filter(function (x) { if (!x.t || seen[x.t.toLowerCase()]) return false; seen[x.t.toLowerCase()] = 1; return true }).slice(0, 4);
+      if (!cor || opts.length < 2) return;
+      opts.push({ t: cor, why: String(o.why_correct || o.whyCorrect || "").trim(), ok: true }); opts = shuffle(opts);
+      card.ch = opts.map(function (x) { return x.t }); card.ci = opts.findIndex(function (x) { return x.ok });
+      if (opts.some(function (x) { return x.why })) card.cx = opts.map(function (x) { return x.why });
+      card.a = cor + (a ? "\n" + a : "")
     } else {
       if (!a && !/\{\{c\d+::/.test(q)) return;
       if (Array.isArray(o.alt) && o.alt.length) card.alt = o.alt.map(String).map(function (x) { return x.trim() }).filter(Boolean).slice(0, 5)
@@ -174,7 +181,7 @@ async function aiChromeSession(system, status) {
 }
 async function aiChromeCall(sys, user, o) {
   var ses = await aiChromeSession(sys, o.status);
-  var schema = { type: "object", properties: { cards: { type: "array", items: { type: "object", properties: { type: { type: "string" }, q: { type: "string" }, a: { type: "string" }, correct: { type: "string" }, wrong: { type: "array", items: { type: "string" } }, alt: { type: "array", items: { type: "string" } }, src: { type: "string" }, note: { type: "string" } }, required: ["type", "q"] } } }, required: ["cards"] };
+  var schema = o.schema || { type: "object", properties: { cards: { type: "array", items: { type: "object", properties: { type: { type: "string" }, q: { type: "string" }, a: { type: "string" }, correct: { type: "string" }, why_correct: { type: "string" }, wrong: { type: "array", items: { type: "object", properties: { c: { type: "string" }, why: { type: "string" } } } }, alt: { type: "array", items: { type: "string" } }, src: { type: "string" }, note: { type: "string" } }, required: ["type", "q"] } } }, required: ["cards"] };
   try {
     if (o.status) o.status("Writing questions…");
     try { return await ses.prompt(user, { responseConstraint: schema }) }
@@ -254,6 +261,28 @@ async function aiGenerate(plan, o) {
   }
   o.warning = failed ? failed.message : "";
   return aiBlendCards(all)
+}
+/* Add an explanation for every choice of multiple-choice cards that were made without them (Library > Add choice explanations) */
+function aiNeedsExplain(c) { return kind(c) === "choice" && !(c.cx && c.cx.length === c.ch.length && c.cx.every(Boolean)) }
+async function aiExplainChoices(cards, o) {
+  var pk = aiProvider(), P = AI_PROV[pk], report = o.report || function () { }, stop = o.cancelled || function () { return false }, per = pk === "chrome" ? 3 : 6, total = Math.ceil(cards.length / per), done = 0, fixed = 0;
+  var sys = "You explain multiple-choice answers to students. For each card you are given a question, its choices and the index of the correct one. Write ONE short sentence for EVERY choice, in the same order as the choices: for the correct choice say why it is right; for each wrong choice name the specific misconception or reason it fails (never just 'this is incorrect'). Plain text, no markdown. " +
+    (pk === "chrome" ? 'Output a single JSON object {"items": [{"id": "...", "why": ["...", "..."]}]}.' : 'Output one JSON object per line and nothing else: {"id": "...", "why": ["...", "..."]} where why has exactly one sentence per choice.');
+  o.schema = { type: "object", properties: { items: { type: "array", items: { type: "object", properties: { id: { type: "string" }, why: { type: "array", items: { type: "string" } } }, required: ["id", "why"] } } }, required: ["items"] };
+  o.status = o.status || function (t, pct) { if (typeof pct === "number" || /sign-in|download|loading/i.test(t || "")) report(t, pct, true) };
+  for (var i = 0; i < cards.length; i += per) {
+    if (stop()) break;
+    var batch = cards.slice(i, i + per);
+    report("Writing explanations (request " + (done + 1) + " of " + total + ") \u00b7 " + fixed + " cards done", done / total * 100, true);
+    var user = batch.map(function (c) { return JSON.stringify({ id: c.id, question: c.q, choices: c.ch, correct_index: c.ci, note: String(c.a || "").split("\n").slice(1).join(" ") }) }).join("\n") + "\n\nWrite the explanations now.";
+    var text = await P.call(sys, user, o); done++;
+    aiJsonList(text).forEach(function (r) {
+      var c = batch.find(function (x) { return x.id === String(r.id) }); if (!c || !Array.isArray(r.why)) return;
+      var why = c.ch.map(function (_, k) { return String(r.why[k] || "").trim() }); if (!why.some(Boolean)) return;
+      c.cx = why; c.u = Date.now(); fixed++
+    })
+  }
+  return fixed
 }
 /* Import screen: the AI section (only shown when "AI-written questions" is chosen) */
 function aiCovHTML() {

@@ -33,10 +33,14 @@ function mergeInto(L, R) {
   var rids = {}; (R.cards || []).forEach(function (c) { rids[c.id] = 1 });
   var nc = L.cards.length; L.cards = L.cards.filter(function (c) { return !del[c.id] }); if (L.cards.length !== nc) chg.local = true;
   L.cards.forEach(function (c) { if (!rids[c.id]) chg.cloud = true });
+  L.plog = L.plog || [];
+  (R.plog || []).forEach(function (e) { if (!L.plog.some(function (x) { return x.t === e.t })) { L.plog.push(e); chg.local = true } });
+  L.plog.forEach(function (e) { if (!(R.plog || []).some(function (x) { return x.t === e.t })) chg.cloud = true });
+  L.plog.sort(function (a, b) { return b.t - a.t }); L.plog = L.plog.slice(0, 30);
   L.log = L.log || {};
   Object.keys(R.log || {}).forEach(function (k) {
     var a = L.log[k], b = R.log[k];
-    if (!a) { L.log[k] = Object.assign({}, b); chg.local = true } else["r", "c", "l", "q"].forEach(function (f) { if ((b[f] || 0) > (a[f] || 0)) { a[f] = b[f]; chg.local = true } else if ((b[f] || 0) < (a[f] || 0)) chg.cloud = true })
+    if (!a) { L.log[k] = Object.assign({}, b); chg.local = true } else ["r", "c", "l", "q"].forEach(function (f) { if ((b[f] || 0) > (a[f] || 0)) { a[f] = b[f]; chg.local = true } else if ((b[f] || 0) < (a[f] || 0)) chg.cloud = true })
   });
   Object.keys(L.log).forEach(function (k) { if (!(R.log || {})[k]) chg.cloud = true });
   if ((R.updated || 0) > (L.updated || 0)) {
@@ -47,7 +51,7 @@ function mergeInto(L, R) {
 }
 function cloudPayload() {
   var s = Object.assign({}, DB.settings); SECRETS.forEach(function (k) { delete s[k] });
-  return { format: "recall-cloud", v: 1, updated: DB.updated || Date.now(), owner: ACCT.user, decks: DB.decks, cards: DB.cards, deleted: DB.deleted || {}, log: DB.log, settings: s, widgets: DB.widgets }
+  return { format: "recall-cloud", v: 1, updated: DB.updated || Date.now(), owner: ACCT.user, decks: DB.decks, cards: DB.cards, deleted: DB.deleted || {}, plog: DB.plog || [], log: DB.log, settings: s, widgets: DB.widgets }
 }
 async function cloudRead(p) {
   var items = await p.fs.readdir("./");

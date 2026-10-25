@@ -64,7 +64,7 @@ function fromText(text, name) {
 }
 function fromJSON(text) {
   var o = JSON.parse(text), direct = [];
-  if (o && o.format === "recall") { var dm = {}; (o.decks || []).forEach(function (d) { dm[d.id] = d.name }); return { direct: (o.cards || []).map(function (c) { return { q: c.q, a: c.a, img: c.img, aud: c.aud, deck: dm[c.deck] || "", box: c.box, due: c.due, stage: c.stage, seen: c.seen, miss: c.miss, ch: c.ch, ci: c.ci, alt: c.alt } }), secs: [] } }
+  if (o && o.format === "recall") { var dm = {}; (o.decks || []).forEach(function (d) { dm[d.id] = d.name }); return { direct: (o.cards || []).map(function (c) { return { q: c.q, a: c.a, img: c.img, aud: c.aud, deck: dm[c.deck] || "", box: c.box, due: c.due, stage: c.stage, seen: c.seen, miss: c.miss, ch: c.ch, ci: c.ci, cx: c.cx, alt: c.alt } }), secs: [] } }
   var arr = Array.isArray(o) ? o : (o.cards || o.notes || o.terms || o.items || []);
   arr.forEach(function (x) { var q = x.q || x.front || x.Front || x.question || x.term || x.prompt || x.word || "", a = x.a || x.back || x.Back || x.answer || x.definition || x.def || ""; if (q) direct.push({ q: String(q), a: String(a), img: x.img || x.image || "", aud: x.aud || "" }) });
   return { direct: direct, secs: [] }

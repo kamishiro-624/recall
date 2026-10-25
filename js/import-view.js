@@ -113,7 +113,7 @@ function itemHTML(x, i) {
   return '<div class="item"><input type="checkbox" data-i="' + i + '" aria-label="Include card"' + (x.on ? " checked" : "") + '>' + (c.img ? '<img alt="" src="' + c.img + '">' : "") + '<div class="body"><div>' + esc((c.q || "").replace(/\n/g, " ")) + '</div>' +
     (c.ch ? '<div class="mc-prev">' + c.ch.map(function (x, i) { return '<span class="' + (i === c.ci ? "right" : "") + '">' + "ABCDEF"[i] + ") " + esc(x) + (i === c.ci ? " \u2713" : "") + '</span>' }).join("") + '</div>' : "") +
     '<div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div>' + (c.note ? '<div class="a"><b>Check:</b> ' + esc(c.note) + '</div>' : "") +
-    '<div class="chips">' + (x.dup ? '<span class="chip warn">duplicate</span>' : "") + (c.ai ? '<span class="chip">AI</span>' : "") + (imp.multiSrc && c.file ? '<span class="chip">' + esc(aiShort(c.file)) + '</span>' : "") + '<span class="chip">' + kind(c) + '</span></div></div></div>'
+    '<div class="chips">' + (x.dup ? '<span class="chip warn">duplicate</span>' : "") + (c.ai ? '<span class="chip">AI</span>' : "") + (c.cx && c.cx.some(Boolean) ? '<span class="chip">explained</span>' : "") + (imp.multiSrc && c.file ? '<span class="chip">' + esc(aiShort(c.file)) + '</span>' : "") + '<span class="chip">' + kind(c) + '</span></div></div></div>'
 }
 function paintCounts() {
   var on = imp.items.filter(function (x) { return x.on }).length, vis = visibleItems(), hidden = on - vis.filter(function (p) { return p.x.on }).length;

@@ -22,7 +22,7 @@ function fxCount(root) {
     root.querySelectorAll("[data-count]").forEach(function (e) {
         var to = +e.dataset.count; if (!fxFull() || !to) { e.textContent = to; return }
         var t0 = performance.now(), dur = 700; e.textContent = 0;
-        (function tick(t) { var k = Math.min(1, (t - t0) / dur); e.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(tick) })(t0)
+        (function tick(t) { var k = Math.max(0, Math.min(1, (t - t0) / dur)); e.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(tick) })(t0)
     })
 }
 var AC = null;

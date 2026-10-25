@@ -1,12 +1,12 @@
 /* Core: state, helpers, storage (IndexedDB), card model, scheduling helpers, duplicate detection */
 var DAY = 864e5, HOUR = 36e5, GAPS = [0, 1, 3, 7, 14];
-var DEFAULTS = { newPerDay: 10, maxReviews: 100, learnSteps: 2, lessonBatch: 5, shuffle: true, dupScope: "deck", aiProvider: "puter", puterModel: "", aiKey: "", aiModel: "claude-sonnet-5-5", gemKey: "", gemModel: "gemini-2.5-flash" };
+var DEFAULTS = { newPerDay: 10, maxReviews: 100, learnSteps: 2, lessonBatch: 5, shuffle: true, dupScope: "deck", showAcc: true, aiProvider: "puter", puterModel: "", aiKey: "", aiModel: "claude-sonnet-5-5", gemKey: "", gemModel: "gemini-2.5-flash" };
 var DB = { decks: [], cards: [], cur: "all", settings: {}, log: {}, widgets: null }, tab = "dash", sess = null, form = blank(), editDash = false, imp = { direct: [], secs: [], items: [], deck: "", msg: "" };
 var CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/g;
 function $(s, r) { return (r || document).querySelector(s) }
 function uid() { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36) }
 function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] }) }
-function blank() { return { id: "", deck: "", q: "", a: "", img: "", aud: "", ch: ["", "", "", ""], ci: 0, ok: false } }
+function blank() { return { id: "", deck: "", q: "", a: "", img: "", aud: "", ch: ["", "", "", ""], ci: 0, cx: ["", "", "", ""], ok: false } }
 function say(t) { $("#sr").textContent = t; var m = $("#msg"); if (m) m.textContent = t }
 function toast(t) { var e = $("#toast"); if (!e) return; e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true }, 7000) }
 /* storage: IndexedDB so images and audio fit */
@@ -38,7 +38,7 @@ function lessonCount() { return inStage("learning").length + Math.min(inStage("n
 function deckId(n) { n = (n || "").trim().toLowerCase(); var d = DB.decks.find(function (x) { return x.name.toLowerCase() === n }); return d ? d.id : null }
 function ensureDeck(n) { n = (n || "").trim() || "My deck"; var id = deckId(n); if (!id) { id = uid(); DB.decks.push({ id: id, name: n }) } return id }
 function deckName(id) { var d = DB.decks.find(function (x) { return x.id === id }); return d ? d.name : "" }
-function mk(o, deck) { return { id: uid(), deck: deck, q: o.q || "", a: o.a || "", img: o.img || "", aud: o.aud || "", box: o.box || 1, due: o.due || 0, seen: o.seen || 0, stage: o.stage || "new", step: 0, miss: o.miss || 0, u: Date.now(), ch: o.ch || undefined, ci: o.ci, alt: o.alt || undefined } }
+function mk(o, deck) { return { id: uid(), deck: deck, q: o.q || "", a: o.a || "", img: o.img || "", aud: o.aud || "", box: o.box || 1, due: o.due || 0, seen: o.seen || 0, stage: o.stage || "new", step: 0, miss: o.miss || 0, u: Date.now(), ch: o.ch || undefined, ci: o.ci, cx: o.cx || undefined, alt: o.alt || undefined } }
 function kind(c) { return /\{\{c\d+::/.test(c.q) ? "fill-in" : (c.ch && c.ch.filter(Boolean).length >= 2) ? "choice" : c.img ? "image" : c.aud ? "audio" : "text" }
 /* a multiple-choice card is a flashcard whose answer is picked instead of typed; for plain-text exports the options are listed under the question */
 function qText(c) { return kind(c) !== "choice" ? c.q : c.q + "\n" + c.ch.map(function (x, i) { return String.fromCharCode(65 + i) + ") " + x }).join("\n") }

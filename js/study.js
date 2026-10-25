@@ -15,31 +15,25 @@ function stats(cs) {
     cs.forEach(function (c) { if (c.stage === "new") o.fresh++; else if (c.stage === "learning") o.learning++; else if (c.box >= 5) o.mastered++; else o.reviewing++ });
     o.learned = o.reviewing + o.mastered; o.pct = o.total ? Math.round(o.learned / o.total * 100) : 0; return o
 }
-function todayWork() { var rv = reviewDue().length, nl = lessonCount(); return { rv: rv, nl: nl, min: Math.max(1, Math.round((rv * 15 + nl * 50) / 60)) } }
 function nextDueTime() { var n = Date.now(), t = 1e18; inStage("review").forEach(function (c) { if (c.due > n && c.due < t) t = c.due }); return t < 1e18 ? t : 0 }
 function live() { return !!(sess && sess.phase && sess.phase !== "done") }
 function remaining(s) {
     if (s.kind === "practice") return s.rq.length;
     return s.rq.filter(function (c) { return !s.again[c.id] }).length + s.pool.length + s.batch.length + s.quiz.length
 }
-function newSession(kind, rq) { return { kind: kind, phase: "review", rq: rq, again: {}, pool: [], batch: [], quiz: [], ti: 0, r: 0, mine: "", draft: "", last: "", res: { miss: 0, shaky: 0, got: 0 }, combo: 0, lastWin: "", revTotal: rq.length, revDone: 0, newTotal: 0, grads: 0, up: 0, taught: 0, teachNext: true } }
+function newSession(kind, rq) { return { kind: kind, phase: "review", rq: rq, again: {}, pool: [], batch: [], quiz: [], ti: 0, r: 0, mine: "", draft: "", last: "", res: { miss: 0, shaky: 0, got: 0 }, combo: 0, lastWin: "", revTotal: rq.length, revDone: 0, newTotal: 0, grads: 0, up: 0, taught: 0, teachNext: true, t0: 0, tpick: 0, tt0: 0 } }
 /* start */
 function startStudy(extra) {
-    if (live() && sess.kind === "today") { tab = "study"; render(); return }
+    if (live()) { tab = "study"; render(); return }
     var rev = reviewDue(); if (S().shuffle) rev = shuffle(rev.slice());
     var pool = inStage("new").slice(0, extra ? Math.max(1, S().lessonBatch) : newAllowance()), quiz = inStage("learning");
     if (!rev.length && !pool.length && !quiz.length) { sess = null; tab = "dash"; render(); return }
     var s = newSession("today", extra ? [] : rev); s.pool = pool; s.quiz = shuffle(quiz.slice()); s.newTotal = pool.length + quiz.length; sess = s;
     nextStep(); tab = "study"; render()
 }
-function startPractice() {
-    if (live() && sess.kind === "practice") { tab = "study"; render(); return }
-    var l = shuffle(scoped().slice()); if (!l.length) { sess = null; render(); return }
-    sess = newSession("practice", l); sess.done = 0; tab = "study"; render()
-}
 /* the session moves forward in one place: reviews, then (teach a batch, quiz it) until every new card is learned */
 function nextStep() {
-    var s = sess; s.r = 0; s.mine = ""; s.draft = ""; s.order = null; s.pick = -1;
+    var s = sess; s.r = 0; s.mine = ""; s.draft = ""; s.order = null; s.pick = -1; s.t0 = 0; s.tpick = 0;
     s.rq = s.rq.filter(alive); s.quiz = s.quiz.filter(alive);
     if (s.rq.length) { s.phase = "review"; return }
     if (s.kind === "practice") { s.phase = "done"; return }
@@ -54,7 +48,7 @@ function fxAfter(s) {
     if (s.combo >= 3 && s.combo % 5 === 0) { fxBurst($(".combo"), true); sfx("win") }
 }
 function gradeReview(c, r) {
-    var s = sess, retry = !!s.again[c.id], sched = s.kind === "today" && !retry, info = "", lvl = false; c.u = Date.now();
+    var s = sess, retry = !!s.again[c.id], sched = s.kind === "today" && !retry, info = "", lvl = false; c.u = Date.now(); paceRecord(c);
     if (sched) {
         var L = lg(); L.r++; c.seen++;
         if (r === 3) { var b0 = c.box; c.box = Math.min(5, c.box + 1); L.c++; if (c.box > b0) { s.up++; lvl = true } } else if (r === 1) { c.box = 1; c.miss++ }
@@ -66,7 +60,7 @@ function gradeReview(c, r) {
     s.last = "Last card: " + info; s.combo = r === 3 ? s.combo + 1 : 0; s.lastWin = lvl ? "level" : ""; nextStep(); save(); render(); fxAfter(s)
 }
 function gradeLearn(c, r) {
-    var s = sess; lg().q++; c.u = Date.now(); s.lastWin = "";
+    var s = sess; lg().q++; c.u = Date.now(); s.lastWin = ""; paceRecord(c);
     if (r === 3) {
         c.step++; s.res.got++;
         if (c.step >= S().learnSteps) { c.stage = "review"; c.box = 1; c.due = Date.now() + 4 * HOUR; s.grads++; s.quiz.shift(); s.lastWin = "learned"; s.last = "Learned! Its first review is " + whenText(c.due) + "." }
@@ -81,18 +75,22 @@ document.addEventListener("keydown", function (e) {
     if (sess.r && /^[123]$/.test(e.key)) sess.cb(sess.cur, +e.key)
 });
 /* screens */
+function accSpan(s) {
+    if (!accShow()) return ""; var r = s.res, n = r.got + r.shaky + r.miss;
+    return '<span class="accy" title="Cards you got right first time">' + (n ? "Accuracy " + Math.round(r.got / n * 100) + '% <small>(' + r.got + " of " + n + ")</small>" : "Accuracy: no answers yet") + '</span>'
+}
 function flowHeader(s) {
     var steps = [], done, rem = remaining(s), pct;
-    if (s.kind === "practice") { done = s.done; steps.push({ n: "Practice", on: true, t: s.done + " of " + (s.done + rem) }) }
+    if (s.kind === "practice") { done = s.done; steps.push({ n: "Practice" + (s.prac && s.prac.rounds > 1 ? " \u00b7 round " + s.prac.round + " of " + s.prac.rounds : ""), on: true, t: s.done + " of " + (s.done + rem) }) }
     else {
         done = s.revDone + s.grads;
         if (s.revTotal) steps.push({ n: "Review", on: s.phase === "review", ok: s.phase !== "review", t: s.revDone + " of " + s.revTotal });
         if (s.newTotal) steps.push({ n: "Learn new cards", on: s.phase === "teach" || s.phase === "quiz", ok: s.phase === "done", t: s.grads + " of " + s.newTotal })
     }
     pct = done + rem ? Math.round(done / (done + rem) * 100) : 100;
-    return '<div class="fl-head"><ol class="fl-steps">' + steps.map(function (x, i) { return '<li class="' + (x.on ? "on" : x.ok ? "ok" : "") + '"' + (x.on ? ' aria-current="step"' : "") + '><b>' + (x.ok ? "\u2713" : i + 1) + '</b> ' + x.n + ' <span>' + x.t + '</span></li>' }).join("") + '</ol><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-label="Session progress"><i style="width:' + pct + '%"></i></div><div class="fl-meta"><span>' + (s.phase === "done" ? "Finished" : rem + (rem === 1 ? " card left" : " cards left")) + '</span>' + (s.combo >= 3 && s.phase !== "done" ? '<span class="combo">\ud83d\udd25 ' + s.combo + ' in a row</span>' : "") + '<button class="sm" id="pz" type="button">' + (s.phase === "done" ? "Back to Today" : "Pause and go back") + '</button></div></div>'
+    return '<div class="fl-head"><ol class="fl-steps">' + steps.map(function (x, i) { return '<li class="' + (x.on ? "on" : x.ok ? "ok" : "") + '"' + (x.on ? ' aria-current="step"' : "") + '><b>' + (x.ok ? "\u2713" : i + 1) + '</b> ' + x.n + ' <span>' + x.t + '</span></li>' }).join("") + '</ol><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-label="Session progress"><i style="width:' + pct + '%"></i></div><div class="fl-meta"><span>' + (s.phase === "done" ? "Finished" : rem + (rem === 1 ? " card left" : " cards left") + ' \u00b7 <span title="Estimated from how fast you answer">' + fmtTime(secsLeft(s)) + ' left</span>') + '</span>' + accSpan(s) + (s.combo >= 3 && s.phase !== "done" ? '<span class="combo">\ud83d\udd25 ' + s.combo + ' in a row</span>' : "") + '<button class="linkbtn" id="acctog" type="button">' + (accShow() ? "Hide accuracy" : "Show accuracy") + '</button><button class="sm" id="pz" type="button">' + (s.phase === "done" ? "Back to Today" : "Pause and go back") + '</button></div></div>'
 }
-function wireHead(v) { var p = $("#pz", v); if (p) p.onclick = function () { if (sess && sess.phase === "done") sess = null; tab = "dash"; render(); cloudFlush() } }
+function wireHead(v) { var tg = $("#acctog", v); if (tg) tg.onclick = function () { S().showAcc = !accShow(); save(); render() }; var p = $("#pz", v); if (p) p.onclick = function () { if (sess && sess.phase === "done") sess = null; tab = "dash"; render(); cloudFlush() } }
 /* short answers: when the expected answer is a word or short phrase, the typed answer is checked for the student (they can still override) */
 function sNorm(s) { return String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\b(the|a|an)\b/g, " ").replace(/\s+/g, " ").trim() }
 function lev(a, b) { var d = [], i, j; for (i = 0; i <= a.length; i++) { d[i] = [i] } for (j = 1; j <= b.length; j++)d[0][j] = j; for (i = 1; i <= a.length; i++)for (j = 1; j <= b.length; j++)d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length] }
@@ -108,7 +106,7 @@ function shortMatch(typed, c) {
     return ex.some(function (e) { return nearly(t, e) || (e.length >= 4 && t.indexOf(e) > -1 && t.split(" ").length <= e.split(" ").length + 3) })
 }
 function quizCard(v, c, label, tag, cb) {
-    var s = sess; s.cur = c; s.cb = cb;
+    var s = sess; s.cur = c; s.cb = cb; if (!s.r && !s.t0) s.t0 = Date.now();
     var sh = isShort(c), match = s.r && sh && shortMatch(s.mine, c);
     v.innerHTML = flowHeader(s) + '<div class="panel' + (s.r ? "" : " enter") + '"><div class="meta ui"><span>' + label + '</span><span>' + tag + '</span></div>' + (s.last ? '<p class="fl-last' + (s.lastWin && !s.r ? " win" : "") + '" role="status">' + esc(s.last) + '</p>' : "") + media(c) + '<p class="q">' + front(c) + '</p>' +
         (s.r ? '<div class="mine" id="mine"></div><div class="answer">' + back(c) + '</div><p class="hint">How did you do? Be honest: this decides when you see the card again. (keys 1, 2, 3)</p><div class="row rate"><button class="r-miss" data-r="1">1 \u00b7 Missed<small>I didn\'t remember</small></button><button class="r-shaky" data-r="2">2 \u00b7 Shaky<small>Close, or I hesitated</small></button><button class="r-got' + (match ? " sug" : "") + '" data-r="3">3 \u00b7 Got it<small>' + (match ? "Your answer matches" : "I knew it") + '</small></button></div>'
@@ -118,14 +116,20 @@ function quizCard(v, c, label, tag, cb) {
     else { $("#mine").textContent = s.mine ? "You wrote: " + s.mine + (sh ? (match ? "  \u2713 matches" : "  (doesn't match exactly; compare it with the answer)") : "") : "No attempt written."; v.querySelectorAll(".rate button").forEach(function (b) { b.onclick = function () { var r = +b.dataset.r; if (r === 3) { fxBurst(b); sfx("ok") } else if (r === 1) sfx("bad"); cb(c, r) } }) }
 }
 /* multiple choice: tap an answer and it is graded for the student (correct = got it, wrong = missed, "I guessed" = shaky) */
-function pickChoice(k) { var s = sess; if (!s || !s.cur || s.r || !s.order || k < 0 || k >= s.order.length) return; s.pick = s.order[k]; s.r = 1; render(); if (s.pick === s.cur.ci) { fxBurst($(".mc-opt.right")); sfx("ok") } else sfx("bad") }
+function pickChoice(k) { var s = sess; if (!s || !s.cur || s.r || !s.order || k < 0 || k >= s.order.length) return; s.pick = s.order[k]; s.tpick = Date.now(); s.r = 1; render(); if (s.pick === s.cur.ci) { fxBurst($(".mc-opt.right")); sfx("ok") } else sfx("bad") }
 function finishChoice(guessed) { var s = sess, c = s.cur, ok = s.pick === c.ci; s.cb(c, ok ? (guessed ? 2 : 3) : 1) }
+/* the answer box under a multiple-choice question: with per-choice explanations it only needs the one-line takeaway */
+function mcAnswer(c) {
+    var rest = String(c.a || "").split("\n").slice(1).join("\n").trim();
+    if (c.cx && c.cx.some(Boolean)) return rest ? '<div class="answer">' + esc(rest) + '</div>' : "";
+    return '<div class="answer">' + back(c) + '</div>'
+}
 function choiceCard(v, c, label, tag, cb) {
-    var s = sess; s.cur = c; s.cb = cb; if (!s.order) { s.order = shuffle(c.ch.map(function (x, i) { return i })); s.pick = -1 }
+    var s = sess; s.cur = c; s.cb = cb; if (!s.r && !s.t0) s.t0 = Date.now(); if (!s.order) { s.order = shuffle(c.ch.map(function (x, i) { return i })); s.pick = -1 }
     var done = !!s.r, ok = done && s.pick === c.ci;
     v.innerHTML = flowHeader(s) + '<div class="panel' + (s.r ? "" : " enter") + '"><div class="meta ui"><span>' + label + '</span><span>' + tag + '</span></div>' + (s.last ? '<p class="fl-last' + (s.lastWin && !s.r ? " win" : "") + '" role="status">' + esc(s.last) + '</p>' : "") + media(c) + '<p class="q">' + front(c) + '</p>' +
-        '<div class="mc" role="group" aria-label="Answer choices">' + s.order.map(function (idx, k) { return '<button type="button" class="mc-opt' + (done ? (idx === c.ci ? " right" : idx === s.pick ? " wrong" : " dim") : "") + '" data-k="' + k + '"' + (done ? " disabled" : "") + '><span class="mc-key">' + (k + 1) + '</span><span class="mc-txt">' + esc(c.ch[idx]) + '</span></button>' }).join("") + '</div>' +
-        (done ? '<p class="fl-last mc-fb ' + (ok ? "ok" : "bad") + '" role="status"><b>' + (ok ? "Correct." : "Not quite.") + '</b></p><div class="answer">' + back(c) + '</div><div class="row"><button class="primary" id="mcn" type="button">Continue</button>' + (ok ? '<button id="mcg" type="button">I guessed (review it sooner)</button>' : "") + '</div>' : '<p class="hint">Pick the best answer (keys 1 to ' + c.ch.length + ').</p>') + '</div>';
+        '<div class="mc" role="group" aria-label="Answer choices">' + s.order.map(function (idx, k) { return '<div class="mc-row"><button type="button" class="mc-opt' + (done ? (idx === c.ci ? " right" : idx === s.pick ? " wrong" : " dim") : "") + '" data-k="' + k + '"' + (done ? " disabled" : "") + '><span class="mc-key">' + (k + 1) + '</span><span class="mc-txt">' + esc(c.ch[idx]) + '</span></button>' + (done && c.cx && c.cx[idx] ? '<p class="mc-why ' + (idx === c.ci ? "right" : idx === s.pick ? "wrong" : "") + '"><b>' + (idx === c.ci ? "Why it\'s correct: " : idx === s.pick ? "Why your answer is wrong: " : "Why this one is wrong: ") + '</b>' + esc(c.cx[idx]) + '</p>' : "") + '</div>' }).join("") + '</div>' +
+        (done ? '<p class="fl-last mc-fb ' + (ok ? "ok" : "bad") + '" role="status"><b>' + (ok ? "Correct." : "Not quite.") + '</b></p>' + mcAnswer(c) + '<div class="row"><button class="primary" id="mcn" type="button">Continue</button>' + (ok ? '<button id="mcg" type="button">I guessed (review it sooner)</button>' : "") + '</div>' : '<p class="hint">Pick the best answer (keys 1 to ' + c.ch.length + ').</p>') + '</div>';
     wireHead(v);
     v.querySelectorAll(".mc-opt").forEach(function (b) { b.onclick = function () { pickChoice(+b.dataset.k) } });
     if (done) { $("#mcn").onclick = function () { finishChoice(false) }; $("#mcn").focus(); if ($("#mcg")) $("#mcg").onclick = function () { finishChoice(true) } }
@@ -135,10 +139,11 @@ function teachView(v) {
     var s = sess, c = s.batch[s.ti];
     if (!c) { s.quiz = s.quiz.concat(shuffle(s.batch.filter(alive))); s.batch = []; s.phase = "quiz"; s.last = "Now a quick quiz on the new cards. Answer from memory."; return studyView(v) }
     var last = s.ti + 1 >= s.batch.length;
-    v.innerHTML = flowHeader(s) + '<div class="panel enter"><div class="meta ui"><span>Meet a new card \u00b7 ' + (s.ti + 1) + ' of ' + s.batch.length + '</span><span>' + kind(c) + '</span></div>' + media(c) + '<p class="q">' + front(c) + '</p>' + (kind(c) === "choice" ? '<ul class="mc-list">' + c.ch.map(function (x, i) { return '<li' + (i === c.ci ? ' class="right"' : "") + '>' + esc(x) + (i === c.ci ? " \u2713" : "") + '</li>' }).join("") + '</ul>' : "") + '<div class="answer">' + back(c) + '</div><p class="hint">Read it and say the answer out loud. ' + (last ? "That's the last one: a quick quiz on these cards comes next." : "After the last new card you'll get a quick quiz on them.") + '</p><div class="row"><button class="primary" id="nx">' + (last ? "Start the quick quiz" : "Next card") + '</button></div></div>';
-    wireHead(v); $("#nx").focus(); $("#nx").onclick = function () { s.ti++; s.last = ""; render() }
+    v.innerHTML = flowHeader(s) + '<div class="panel enter"><div class="meta ui"><span>Meet a new card \u00b7 ' + (s.ti + 1) + ' of ' + s.batch.length + '</span><span>' + kind(c) + '</span></div>' + media(c) + '<p class="q">' + front(c) + '</p>' + (kind(c) === "choice" ? '<ul class="mc-list">' + c.ch.map(function (x, i) { return '<li' + (i === c.ci ? ' class="right"' : "") + '>' + esc(x) + (i === c.ci ? " \u2713" : "") + (c.cx && c.cx[i] ? '<span class="mc-why-i">' + esc(c.cx[i]) + '</span>' : "") + '</li>' }).join("") + '</ul>' : "") + '<div class="answer">' + back(c) + '</div><p class="hint">Read it and say the answer out loud. ' + (last ? "That's the last one: a quick quiz on these cards comes next." : "After the last new card you'll get a quick quiz on them.") + '</p><div class="row"><button class="primary" id="nx">' + (last ? "Start the quick quiz" : "Next card") + '</button></div></div>';
+    wireHead(v); s.tt0 = Date.now(); $("#nx").focus(); $("#nx").onclick = function () { paceUpdate("teach", (Date.now() - s.tt0) / 1000); save(); s.ti++; s.last = ""; render() }
 }
 function doneView(v) {
+    if (sess.kind === "practice") return practiceDoneView(v);
     var s = sess, r = s.res, st = stats(scoped()), more = inStage("new").length, nx = nextDueTime(), n = r.got + r.shaky + r.miss;
     v.innerHTML = flowHeader(s) + '<div class="panel enter"><h2>' + (s.kind === "practice" ? "Practice complete" : "Nice work. You\'re done for today.") + '</h2><div class="fl-stats"><div><b data-count="' + n + '">' + n + '</b><span>answers</span></div>' + (s.kind === "today" ? '<div><b data-count="' + s.grads + '">' + s.grads + '</b><span>new cards learned</span></div><div><b data-count="' + s.up + '">' + s.up + '</b><span>cards moved up a level</span></div>' : "") + '</div><p>Remembered ' + r.got + ', shaky ' + r.shaky + ', missed ' + r.miss + '.</p>' +
         '<div class="fl-prog"><div class="meta ui"><span>Deck progress: learned ' + st.learned + ' of ' + st.total + ' cards</span><span>' + st.pct + '%</span></div><div class="bar"><i style="width:' + st.pct + '%"></i></div></div>' +
