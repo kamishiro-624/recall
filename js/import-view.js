@@ -12,6 +12,7 @@ function recompute() {
 }
 function wrapCard(c) { return { c: c, on: true } }
 function rebuild() {
+  if (imp.method === "vocab") { imp.items = (imp.vocab || []).map(wrapCard); markDups(false); return }
   imp.items = imp.direct.map(wrapCard).concat(useAI() ? aiBlendCards(imp.ai || []).map(wrapCard) : aiBlendCards(gen(imp.secs, iopts())).map(wrapCard)); markDups(false)
 }
 function markDups(keepTouched) {
@@ -69,6 +70,7 @@ function fileHTML(f) {
     (f.state === "reading" ? progHTML("fp" + f.id, f.label) : '<div class="file-note" role="status">' + (f.state === "ok" ? "Loaded: " : "") + esc(f.note) + '</div>') + more + '</div>' + (f.state === "reading" ? "" : '<button class="sm" type="button" data-rm="' + f.id + '" aria-label="Remove ' + esc(f.name) + '">Remove</button>') + '</li>'
 }
 function importView(v) {
+  if (imp.method === "vocab") { imp.method = "ai"; rebuild() }
   if (imp.ai && imp.ai.length) imp.aiCov = aiCoverage(aiSources(), imp.ai);
   var files = iFiles(), hasSecs = imp.secs.length > 0, hasDirect = imp.direct.length > 0, o = iopts(), ai = useAI();
   var ok = files.filter(function (f) { return f.state === "ok" }).length;
@@ -84,6 +86,7 @@ function importView(v) {
       (ai ? aiControls() : '<div class="opts"><label><input type="checkbox" id="o1"' + (o.key ? " checked" : "") + '> Key-points card for each slide or section</label><label><input type="checkbox" id="o2"' + (o.terms ? " checked" : "") + '> Term cards from lines like "Term: definition"</label><label><input type="checkbox" id="o3"' + (o.cloze ? " checked" : "") + '> Fill-in-the-blank cards from longer sentences</label><label><input type="checkbox" id="o4"' + (o.img ? " checked" : "") + '> Image cards from slide pictures</label></div><p class="hint" id="ocount" role="status"></p>') + '</div>'
       : (hasDirect ? '<div class="panel"><h2>2. Choose how to make cards</h2><p class="hint">These files already contain finished cards, so there is nothing to generate. Review them below.</p></div>' : "")) +
     '<div id="istep3"></div>';
+  wireSeg(v);
   var ff = $("#ff"); ff.onchange = function () { var l = Array.prototype.slice.call(ff.files); ff.value = ""; ingest(l) }; var dr = $("#drop");
   dr.ondragover = function (e) { e.preventDefault(); dr.classList.add("over") }; dr.ondragleave = function () { dr.classList.remove("over") }; dr.ondrop = function (e) { e.preventDefault(); dr.classList.remove("over"); ingest(e.dataTransfer.files) };
   $("#pt").oninput = function () { imp.paste = this.value };

@@ -11,7 +11,7 @@ var WDEFS = {
       if (live()) { var pr = sess.kind === "practice"; head = pr ? "Practice in progress" : "Session in progress"; sub = remaining(sess) + " left, " + fmtTime(secsLeft(sess)) + "."; btns = '<button class="primary fl-cta" data-go="study">' + (pr ? "Continue practice" : "Continue studying") + '</button>' + (pr ? '<button data-go="endprac" type="button">End practice</button>' : "") }
       else if (w.rv + w.nl > 0) { head = "Ready when you are"; sub = [w.rv ? w.rv + (w.rv === 1 ? " card to review" : " cards to review") : "", w.nl ? w.nl + " new to learn" : "", fmtTime(w.secs)].filter(Boolean).join(" \u00b7 "); btns = '<button class="primary fl-cta" data-go="study">Start studying</button>' }
       else { head = "You're all caught up"; sub = nx ? "Your next review is due " + whenText(nx) + "." : "Add more cards to keep going."; btns = more ? '<button class="primary fl-cta" data-go="more">Learn ' + Math.min(more, Math.max(1, S().lessonBatch)) + ' more new cards</button>' : "" }
-      return '<div class="fl-hero"><div><div class="fl-title">' + head + '</div><p class="fl-sub">' + sub + '</p></div><div class="row" style="margin:0">' + btns + '<button data-go="practice" title="Go through every card without changing your schedule">Practice</button></div></div>' +
+      return '<div class="fl-hero"><div><div class="fl-title">' + head + '</div><p class="fl-sub">' + sub + '</p></div><div class="row" style="margin:0">' + btns + '<button data-go="practice" title="Go through every card without changing your schedule">Practice</button><button data-go="cram" title="Plan your study around a deadline">Deadline plan</button></div></div>' +
         '<div class="fl-prog"><div class="meta ui"><span>Learned ' + st.learned + ' of ' + st.total + ' cards</span><span>' + st.pct + '%</span></div><div class="bar"><i style="width:' + st.pct + '%"></i></div></div>' +
         (!ACCT.user && !S().acctDismiss ? '<p class="hint fl-note">Your cards are saved on this device only. <button class="sm" data-go="acct" type="button">Sign in to save them online</button> <button class="sm" data-go="acctno" type="button">Not now</button></p>' : "") + (st.learned === 0 && !live() ? '<p class="hint" style="margin:10px 0 0">How it works: each day, review the cards that are due, then meet a few new ones and get quizzed on them. Cards you remember come back less often.</p>' : "")
     }
@@ -62,6 +62,14 @@ var WDEFS = {
       return l.length ? l.map(function (c) { return '<div class="item" style="padding:6px 0"><div class="body"><div>' + esc((c.q || "(picture or audio)").replace(/\n/g, " ")) + '</div></div><span class="chip">missed ' + c.miss + '\u00d7</span></div>' }).join("") : '<p class="hint">Cards you miss most will show up here.</p>'
     }
   },
+  plan: {
+    t: "Deadlines", size: "m", r: function (w) {
+      var ps = activePlans().filter(function (x) { return x.p.due > Date.now() });
+      if (!ps.length) return '<p class="hint" style="margin-top:0">Studying for a test? Pick a deck and a deadline and Recall plans the days for you.</p><button data-go="cram" type="button">Set up a deadline plan</button>';
+      var lab = { done: "all learned", behind: "behind", ahead: "ahead", ok: "on track" };
+      return ps.slice(0, 4).map(function (x) { var a = cramAnalyze(x.id, x.p); return '<div class="item" style="padding:6px 0"><div class="body"><div>' + esc(deckName(x.id)) + '</div><div class="a">' + dueText(x.p.due) + ' \u00b7 ' + cramQuotaLeft(x.id) + ' new cards today \u00b7 ' + a.st.left + ' left to learn</div></div><span class="chip' + (a.status === "behind" ? " warn" : "") + '">' + lab[a.status] + '</span></div>' }).join("") + '<div class="row"><button class="sm" data-go="cram" type="button">Open plans</button></div>'
+    }
+  },
   note: {
     t: "My note", size: "m", off: true, r: function (w) {
       var t = (w.opt.text || "").trim(), i = DB.widgets.indexOf(w);
@@ -69,11 +77,11 @@ var WDEFS = {
     }
   }
 };
-var WORDER = ["today", "stages", "streak", "forecast", "activity", "decks", "trouble", "goal", "note"];
+var WORDER = ["today", "stages", "streak", "plan", "forecast", "activity", "decks", "trouble", "goal", "note"];
 var PRESETS = {
-  balanced: { label: "Balanced (the default)", list: [["today", "f"], ["stages", "l"], ["streak", "s"], ["forecast", "m"], ["activity", "m"], ["decks", "m"], ["trouble", "m"]] },
+  balanced: { label: "Balanced (the default)", list: [["today", "f"], ["stages", "l"], ["streak", "s"], ["plan", "m"], ["forecast", "m"], ["activity", "m"], ["decks", "m"], ["trouble", "m"]] },
   focus: { label: "Focus: today and progress", list: [["today", "f"], ["stages", "l"], ["goal", "s"]] },
-  everything: { label: "Everything", list: [["today", "f"], ["stages", "l"], ["goal", "s"], ["streak", "s"], ["forecast", "m"], ["activity", "m"], ["decks", "m"], ["trouble", "m"], ["note", "f"]] },
+  everything: { label: "Everything", list: [["today", "f"], ["stages", "l"], ["goal", "s"], ["streak", "s"], ["plan", "m"], ["forecast", "m"], ["activity", "m"], ["decks", "m"], ["trouble", "m"], ["note", "f"]] },
   minimal: { label: "Minimal: just today", list: [["today", "f"]] }
 };
 function wDefault(id) { var d = WDEFS[id]; return { id: id, on: !d.off, size: d.size, opt: {} } }

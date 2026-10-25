@@ -1,7 +1,7 @@
 /* Core: state, helpers, storage (IndexedDB), card model, scheduling helpers, duplicate detection */
 var DAY = 864e5, HOUR = 36e5, GAPS = [0, 1, 3, 7, 14];
 var DEFAULTS = { newPerDay: 10, maxReviews: 100, learnSteps: 2, lessonBatch: 5, shuffle: true, dupScope: "deck", showAcc: true, aiProvider: "puter", puterModel: "", aiKey: "", aiModel: "claude-sonnet-5-5", gemKey: "", gemModel: "gemini-2.5-flash" };
-var DB = { decks: [], cards: [], cur: "all", settings: {}, log: {}, widgets: null }, tab = "dash", sess = null, form = blank(), editDash = false, imp = { direct: [], secs: [], items: [], deck: "", msg: "" };
+var DB = { decks: [], cards: [], cur: "all", settings: {}, log: {}, widgets: null, plans: {} }, tab = "dash", sess = null, form = blank(), editDash = false, imp = { direct: [], secs: [], items: [], deck: "", msg: "" };
 var CLOZE = /\{\{c\d+::(.*?)(?:::.*?)?\}\}/g;
 function $(s, r) { return (r || document).querySelector(s) }
 function uid() { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36) }
@@ -18,7 +18,7 @@ function save() { DB.updated = Date.now(); clearTimeout(tmr); tmr = setTimeout(s
 /* deleted cards and decks are remembered (for 90 days) so a deletion on one device also reaches the others */
 function markGone(ids) { DB.deleted = DB.deleted || {}; var t = Date.now(); ids.forEach(function (i) { DB.deleted[i] = t }) }
 function migrate() {
-    DB.settings = DB.settings || {}; if (DB.settings.aiKey && !DB.settings.aiProvider) DB.settings.aiProvider = "claude"; DB.settings = Object.assign({}, DEFAULTS, DB.settings); DB.log = DB.log || {}; DB.deleted = DB.deleted || {}; DB.decks = DB.decks || []; if (!DB.cur) DB.cur = "all";
+    DB.settings = DB.settings || {}; if (DB.settings.aiKey && !DB.settings.aiProvider) DB.settings.aiProvider = "claude"; DB.settings = Object.assign({}, DEFAULTS, DB.settings); DB.log = DB.log || {}; DB.deleted = DB.deleted || {}; DB.plans = DB.plans || {}; DB.decks = DB.decks || []; if (!DB.cur) DB.cur = "all";
     DB.cards.forEach(function (c) { if (!c.stage) c.stage = "review"; c.miss = c.miss || 0; c.step = c.step || 0; c.u = c.u || 0 }); normWidgets()
 }
 /* settings, daily log, stages */
@@ -29,11 +29,12 @@ function lgp(d) { return DB.log[today(d)] || { r: 0, c: 0, l: 0, q: 0 } }
 function scoped() { return DB.cards.filter(function (c) { return DB.cur === "all" || c.deck === DB.cur }) }
 function inStage(s) { return scoped().filter(function (c) { return c.stage === s }) }
 function reviewDue() {
-    var n = Date.now(), rem = S().maxReviews > 0 ? Math.max(0, S().maxReviews - lgp().r) : 1e9;
-    return inStage("review").filter(function (c) { return c.due <= n }).sort(function (a, b) { return a.due - b.due }).slice(0, rem)
+    var n = Date.now(), cap = S().maxReviews > 0 ? Math.max(0, S().maxReviews - lgp().r) : 1e9;
+    var due = inStage("review").filter(function (c) { return c.due <= n }).sort(function (a, b) { return a.due - b.due });
+    /* decks with a cram deadline ignore the daily review limit: everything due has to be seen */
+    var cram = due.filter(function (c) { return cramActive(c.deck) }), rest = due.filter(function (c) { return !cramActive(c.deck) }).slice(0, cap);
+    return cram.concat(rest).sort(function (a, b) { return a.due - b.due })
 }
-function newAllowance() { return Math.max(0, S().newPerDay - lgp().l) }
-function lessonCount() { return inStage("learning").length + Math.min(inStage("new").length, newAllowance()) }
 /* model */
 function deckId(n) { n = (n || "").trim().toLowerCase(); var d = DB.decks.find(function (x) { return x.name.toLowerCase() === n }); return d ? d.id : null }
 function ensureDeck(n) { n = (n || "").trim() || "My deck"; var id = deckId(n); if (!id) { id = uid(); DB.decks.push({ id: id, name: n }) } return id }

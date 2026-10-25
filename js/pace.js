@@ -21,7 +21,7 @@ function secsLeft(s) {
 function secsToday() {
     var t = 0, L = S().learnSteps; reviewDue().forEach(function (c) { t += cardSecs(c) });
     inStage("learning").forEach(function (c) { t += learnSecs(c, Math.max(1, L - c.step)) });
-    inStage("new").slice(0, newAllowance()).forEach(function (c) { t += newCardSecs(c) }); return t
+    newPool().forEach(function (c) { t += newCardSecs(c) }); return t
 }
 function todayWork() { var rv = reviewDue().length, nl = lessonCount(), secs = secsToday(); return { rv: rv, nl: nl, secs: secs, min: Math.max(1, Math.round(secs / 60)) } }
 function fmtTime(sec) { if (sec < 45) return "under a minute"; var m = Math.round(sec / 60); if (m < 60) return "about " + m + " min"; var h = Math.floor(m / 60), r = m % 60; return "about " + h + " h" + (r ? " " + r + " min" : "") }

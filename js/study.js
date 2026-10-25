@@ -26,7 +26,7 @@ function newSession(kind, rq) { return { kind: kind, phase: "review", rq: rq, ag
 function startStudy(extra) {
     if (live()) { tab = "study"; render(); return }
     var rev = reviewDue(); if (S().shuffle) rev = shuffle(rev.slice());
-    var pool = inStage("new").slice(0, extra ? Math.max(1, S().lessonBatch) : newAllowance()), quiz = inStage("learning");
+    var pool = extra ? inStage("new").slice(0, Math.max(1, S().lessonBatch)) : newPool(), quiz = inStage("learning");
     if (!rev.length && !pool.length && !quiz.length) { sess = null; tab = "dash"; render(); return }
     var s = newSession("today", extra ? [] : rev); s.pool = pool; s.quiz = shuffle(quiz.slice()); s.newTotal = pool.length + quiz.length; sess = s;
     nextStep(); tab = "study"; render()
@@ -39,7 +39,7 @@ function nextStep() {
     if (s.kind === "practice") { s.phase = "done"; return }
     if (s.pool.length && (s.teachNext || !s.quiz.length)) {
         s.teachNext = false; s.batch = s.pool.splice(0, Math.max(1, S().lessonBatch));
-        s.batch.forEach(function (c) { c.stage = "learning"; c.step = 0; c.u = Date.now(); lg().l++ }); s.taught += s.batch.length; s.phase = "teach"; s.ti = 0; save(); return
+        s.batch.forEach(function (c) { c.stage = "learning"; c.step = 0; c.u = Date.now(); var Lg = lg(); Lg.l++; Lg.ld = Lg.ld || {}; Lg.ld[c.deck] = (Lg.ld[c.deck] || 0) + 1 }); s.taught += s.batch.length; s.phase = "teach"; s.ti = 0; save(); return
     }
     s.phase = s.quiz.length ? "quiz" : "done"
 }
@@ -52,7 +52,7 @@ function gradeReview(c, r) {
     if (sched) {
         var L = lg(); L.r++; c.seen++;
         if (r === 3) { var b0 = c.box; c.box = Math.min(5, c.box + 1); L.c++; if (c.box > b0) { s.up++; lvl = true } } else if (r === 1) { c.box = 1; c.miss++ }
-        c.due = Date.now() + (r === 1 ? 15 * 60000 : (GAPS[c.box - 1] || 0.25) * DAY);
+        c.due = Date.now() + cramIv(c, r === 1 ? 15 * 60000 : (GAPS[c.box - 1] || 0.25) * DAY);
         info = r === 1 ? "Missed. You'll see it once more before you finish." : (r === 3 ? (lvl ? "Level up! " : "Got it. ") : "Shaky. ") + "Next review " + whenText(c.due) + "."
     } else info = retry ? "Second try recorded." : "Marked to try once more before you finish.";
     if (!retry) { s.res[r === 3 ? "got" : r === 2 ? "shaky" : "miss"]++; if (s.kind === "today") s.revDone++; else s.done++ }
@@ -63,7 +63,7 @@ function gradeLearn(c, r) {
     var s = sess; lg().q++; c.u = Date.now(); s.lastWin = ""; paceRecord(c);
     if (r === 3) {
         c.step++; s.res.got++;
-        if (c.step >= S().learnSteps) { c.stage = "review"; c.box = 1; c.due = Date.now() + 4 * HOUR; s.grads++; s.quiz.shift(); s.lastWin = "learned"; s.last = "Learned! Its first review is " + whenText(c.due) + "." }
+        if (c.step >= S().learnSteps) { c.stage = "review"; c.box = 1; c.due = Date.now() + cramIv(c, 4 * HOUR); s.grads++; s.quiz.shift(); s.lastWin = "learned"; s.last = "Learned! Its first review is " + whenText(c.due) + "." }
         else { s.quiz.push(s.quiz.shift()); s.last = "Correct " + c.step + " of " + S().learnSteps + ". It comes back once more." }
     } else { c.step = 0; if (r === 1) { c.miss++; s.res.miss++ } else s.res.shaky++; s.quiz.push(s.quiz.shift()); s.last = "No problem. It comes back so you can try again." }
     s.last = "Last card: " + s.last; s.combo = r === 3 ? s.combo + 1 : 0; nextStep(); save(); render(); fxAfter(s)

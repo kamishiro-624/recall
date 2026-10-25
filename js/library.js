@@ -66,7 +66,7 @@ function libView(v) {
     if ($("#dd")) $("#dd").onclick = async function () {
         var id = DB.cur, n = DB.cards.filter(function (c) { return c.deck === id }).length;
         if (!(await askConfirm({ title: "Delete the deck \u201c" + deckName(id) + "\u201d?", body: "Its " + n + " cards and their study progress will be deleted. This can't be undone.", ok: "Delete deck", danger: true }))) return;
-        markGone(DB.cards.filter(function (c) { return c.deck === id }).map(function (c) { return c.id }).concat([id])); DB.cards = DB.cards.filter(function (c) { return c.deck !== id }); DB.decks = DB.decks.filter(function (d) { return d.id !== id }); DB.cur = "all"; LIB.sel = {}; sess = null; save(); render(); toast("Deck deleted.")
+        markGone(DB.cards.filter(function (c) { return c.deck === id }).map(function (c) { return c.id }).concat([id])); DB.cards = DB.cards.filter(function (c) { return c.deck !== id }); DB.decks = DB.decks.filter(function (d) { return d.id !== id }); if (DB.plans && DB.plans[id]) DB.plans[id] = { on: false, due: 0, u: Date.now() }; DB.cur = "all"; LIB.sel = {}; sess = null; save(); render(); toast("Deck deleted.")
     };
     if ($("#rd")) $("#rd").onclick = async function () {
         var rm = dupGroups().map(function (c) { return c.id });

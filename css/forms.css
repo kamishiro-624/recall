@@ -2,50 +2,190 @@
    (--bg, --surface, --ink, --mute, --line, --acc), so it follows the light and dark themes. */
 
 /* Native popups, scrollbars and autofill follow the active theme */
-:root[data-theme="dark"] :is(input, select, textarea) { color-scheme: dark }
-:root[data-theme="light"] :is(input, select, textarea) { color-scheme: light }
-@media (prefers-color-scheme: dark) { :root:not([data-theme]) :is(input, select, textarea) { color-scheme: dark } }
+:root[data-theme="dark"] :is(input, select, textarea) {
+  color-scheme: dark
+}
+
+:root[data-theme="light"] :is(input, select, textarea) {
+  color-scheme: light
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) :is(input, select, textarea) {
+    color-scheme: dark
+  }
+}
 
 /* Labels: clear and readable, not faint */
-label { display: block; margin: 16px 0 4px; font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif; font-size: 14.5px; font-weight: 600; line-height: 1.35; color: var(--ink) }
-.opts label, label.inl { display: flex; align-items: center; gap: .55em; margin: 8px 0 0; font-weight: 400 }
-label.inl { display: inline-flex; margin: 0 }
+label {
+  display: block;
+  margin: 16px 0 4px;
+  font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink)
+}
+
+.opts label,
+label.inl {
+  display: flex;
+  align-items: center;
+  gap: .55em;
+  margin: 8px 0 0;
+  font-weight: 400
+}
+
+label.inl {
+  display: inline-flex;
+  margin: 0
+}
 
 /* Text-like controls */
-input[type="text"], input[type="search"], input[type="number"], input[type="password"], input[type="url"], input[type="email"], select, textarea {
-  display: block; width: 100%; max-width: 100%; margin: 4px 0; padding: 10px 12px; min-height: 44px;
-  font-size: max(16px, 1rem); line-height: 1.4; color: var(--ink); background-color: var(--bg);
-  border: 1px solid var(--line); border-radius: 10px; transition: border-color .15s;
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="password"],
+input[type="url"],
+input[type="email"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 4px 0;
+  padding: 10px 12px;
+  min-height: 44px;
+  font-size: max(16px, 1rem);
+  line-height: 1.4;
+  color: var(--ink);
+  background-color: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  transition: border-color .15s;
 }
-input, textarea { font-family: inherit }
-select { font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif }
-input[type="number"] { max-width: 10rem }
-textarea { min-height: 110px; resize: vertical; line-height: 1.5 }
-input::placeholder, textarea::placeholder { color: var(--mute); opacity: .8 }
-input:hover, select:hover, textarea:hover { border-color: var(--acc) }
-input:focus-visible, select:focus-visible, textarea:focus-visible { border-color: var(--acc) }
-input:disabled, select:disabled, textarea:disabled { opacity: .55; cursor: not-allowed }
+
+input,
+textarea {
+  font-family: inherit
+}
+
+select {
+  font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif
+}
+
+input[type="number"] {
+  max-width: 10rem
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+  line-height: 1.5
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--mute);
+  opacity: .8
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--acc)
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--acc)
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: .55;
+  cursor: not-allowed
+}
 
 /* Drop-down with its own arrow */
 select {
-  -webkit-appearance: none; appearance: none; cursor: pointer; padding-right: 40px;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  padding-right: 40px;
   background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
-  background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px, 6px 6px; background-repeat: no-repeat;
+  background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
 }
-select option { color: var(--ink); background-color: var(--surface) }
-input[type="search"] { -webkit-appearance: none; appearance: none }
+
+select option {
+  color: var(--ink);
+  background-color: var(--surface)
+}
+
+input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none
+}
 
 /* Checkboxes and radios */
-input[type="checkbox"], input[type="radio"] { accent-color: var(--acc); width: 1.15em; height: 1.15em; margin: 0; flex: none; cursor: pointer }
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--acc);
+  width: 1.15em;
+  height: 1.15em;
+  margin: 0;
+  flex: none;
+  cursor: pointer
+}
 
 /* File pickers */
-input[type="file"] { display: block; max-width: 100%; margin: 6px 0 4px; padding: 8px 0; font-family: inherit; font-size: 15px; color: var(--mute); cursor: pointer }
-input[type="file"]::file-selector-button {
-  margin-right: 12px; padding: 8px 14px; font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif; font-size: 15px; font-weight: 500;
-  color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+input[type="file"] {
+  display: block;
+  max-width: 100%;
+  margin: 6px 0 4px;
+  padding: 8px 0;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--mute);
+  cursor: pointer
 }
-input[type="file"]::file-selector-button:hover { border-color: var(--acc) }
+
+input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 8px 14px;
+  font-family: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+  border-color: var(--acc)
+}
 
 /* Provider notes in Settings */
-.ainote { margin: 10px 0 6px; padding: 10px 14px; font-size: 15px; line-height: 1.5; color: var(--ink); background: var(--bg); border-left: 3px solid var(--acc); border-radius: 0 10px 10px 0 }
-.ainote div + div { margin-top: 6px }
+.ainote {
+  margin: 10px 0 6px;
+  padding: 10px 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg);
+  border-left: 3px solid var(--acc);
+  border-radius: 0 10px 10px 0
+}
+
+.ainote div+div {
+  margin-top: 6px
+}
