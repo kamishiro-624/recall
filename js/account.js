@@ -46,7 +46,7 @@ function mergeInto(L, R) {
   L.log = L.log || {};
   Object.keys(R.log || {}).forEach(function (k) {
     var a = L.log[k], b = R.log[k];
-    if (!a) { L.log[k] = Object.assign({}, b); chg.local = true } else["r", "c", "l", "q"].forEach(function (f) { if ((b[f] || 0) > (a[f] || 0)) { a[f] = b[f]; chg.local = true } else if ((b[f] || 0) < (a[f] || 0)) chg.cloud = true })
+    if (!a) { L.log[k] = Object.assign({}, b); chg.local = true } else ["r", "c", "l", "q"].forEach(function (f) { if ((b[f] || 0) > (a[f] || 0)) { a[f] = b[f]; chg.local = true } else if ((b[f] || 0) < (a[f] || 0)) chg.cloud = true })
   });
   Object.keys(L.log).forEach(function (k) { if (!(R.log || {})[k]) chg.cloud = true });
   if ((R.updated || 0) > (L.updated || 0)) {
@@ -84,7 +84,7 @@ async function cloudSync(why) {
     if (chg.local) { applyTheme(); applyFx() }
     if (chg.local) { if (tab === "study" || tab === "import" || tab === "add") shell(); else render() }
   } catch (e) {
-    clearTimeout(barT); ACCT.state = "error"; ACCT.dirty = true; ACCT.msg = "Couldn't reach your account (" + aiErr(e, "no connection") + "). Your cards are safe on this device and will save when the connection is back.";
+    clearTimeout(barT); ACCT.state = "error"; ACCT.dirty = true; ACCT.msg = "Couldn't reach your account (" + aiErr(e, "no connection") + "). Your cards are safe on this device and will save when the connection is back. If your school blocks online saving, use a backup file (Settings > Backup file).";
     progHide("sync"); ACCT.tm = setTimeout(function () { cloudSync("auto") }, 60000)
   } finally { ACCT.busy = false; acctPaint(); if (ACCT.again) { ACCT.again = false; cloudDirty() } }
 }
@@ -103,7 +103,7 @@ async function acctSignIn() {
     var p = await aiLoadPuter();
     if (!(await p.auth.isSignedIn())) { progSet("sync", null, "Waiting for you to sign in in the Puter window\u2026", true); await p.auth.signIn() }
     var u = await p.auth.getUser(); await acctReady(u.username)
-  } catch (e) { progHide("sync"); ACCT.state = ACCT.user ? ACCT.state : "out"; ACCT.msg = aiErr(e, "The sign-in didn't finish.") + " If no window opened, allow pop-ups for this page and try again."; acctPaint() }
+  } catch (e) { progHide("sync"); ACCT.state = ACCT.user ? ACCT.state : "out"; ACCT.msg = aiErr(e, "The sign-in didn't finish.") + " If no window opened, allow pop-ups for this page and try again. If your school network blocks sign-in, use a backup file instead (Settings > Backup file)."; acctPaint() }
 }
 async function acctChoose(useAccount) {
   if (useAccount) { markGone([]); DB.cards = []; DB.decks = []; DB.log = {}; DB.deleted = {}; DB.cur = "all"; sess = null }

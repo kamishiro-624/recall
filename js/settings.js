@@ -2,7 +2,7 @@
 function setView(v) {
     var s = S();
     function num(id, label, min, max, help) { return '<label for="' + id + '">' + label + '</label><input type="number" id="' + id + '" min="' + min + '" max="' + max + '" value="' + s[id] + '"><p class="hint" style="margin:4px 0 0">' + help + '</p>' }
-    v.innerHTML = '<div class="panel" id="acctpanel"></div><div class="panel" id="appear"></div><div class="panel"><h2>Daily pace</h2>' +
+    v.innerHTML = '<div class="panel" id="acctpanel"></div><div class="panel" id="backup"></div><div class="panel" id="appear"></div><div class="panel"><h2>Daily pace</h2>' +
         num("newPerDay", "New cards per day", 0, 500, "How many brand-new cards you meet each day. Cards you already know come back on their own schedule, so this only sets how fast you add new material. 10 is a good start; lower it if reviews start to feel heavy. 0 pauses new cards.") +
         '<p class="hint" id="msg" role="status"></p></div>' +
         '<div class="panel"><h2>AI question writing</h2><div id="aiSet"></div></div>' +
@@ -17,7 +17,7 @@ function setView(v) {
     $("#learnSteps").onchange = function () { s.learnSteps = +this.value; save(); say("Saved.") };
     $("#shuffle").onchange = function () { s.shuffle = this.checked; save(); say("Saved.") };
     $("#dupScope").onchange = function () { s.dupScope = this.value; save(); say("Saved.") };
-    acctPaint(); $("#appear").innerHTML = appearanceHTML(); appearanceWire($("#appear")); aiSettings($("#aiSet"));
+    acctPaint(); $("#backup").innerHTML = backupHTML(); backupWire($("#backup")); $("#appear").innerHTML = appearanceHTML(); appearanceWire($("#appear")); aiSettings($("#aiSet"));
     $("#rw").onclick = async function () { if (!(await askConfirm({ title: "Restore the default home page?", body: "Your custom layout, sizes and note are replaced by the standard layout.", ok: "Restore default", danger: true }))) return; applyPreset("balanced"); save(); say("Home page restored to the default layout.") };
     $("#rt").onclick = async function () { if (!(await askConfirm({ title: "Reset today's counters?", body: "Today's new-card and review counts go back to zero, so Recall will offer today's new cards and reviews again.", ok: "Reset counters", danger: true }))) return; delete DB.log[today()]; save(); shell(); say("Today's counters were reset.") }
 }
