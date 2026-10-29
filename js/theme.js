@@ -44,10 +44,11 @@ function appearanceHTML() {
     var s = S();
     return '<h2>Appearance and effects</h2><p class="hint" style="margin-top:0">Pick a look. It is remembered on this device, and on your other devices if you sign in.</p><div class="tgrid" id="tgrid" role="radiogroup" aria-label="Theme">' + themeOptions() + '</div>' +
         '<label for="fxm">Animations</label><select id="fxm">' + [["auto", "Match my device (full, unless it asks for less motion)"], ["full", "Full: bursts and confetti when you answer well"], ["calm", "Calm: small animations only"], ["off", "Off"]].map(function (o) { return '<option value="' + o[0] + '"' + ((s.fx || "auto") === o[0] ? " selected" : "") + '>' + o[1] + '</option>' }).join("") + '</select>' +
-        '<div class="opts"><label><input type="checkbox" id="snd"' + (s.sound ? " checked" : "") + '> Sound effects (short chimes when you answer)</label><label><input type="checkbox" id="sacc"' + (s.showAcc !== false ? " checked" : "") + '> Show my accuracy before and during practice and study</label></div>'
+        '<div class="opts"><label><input type="checkbox" id="snd"' + (s.sound ? " checked" : "") + '> Sound effects (short chimes when you answer)</label><label><input type="checkbox" id="saa"' + (s.autoAdv !== false ? " checked" : "") + '> Move on automatically when a typed answer matches exactly</label><label><input type="checkbox" id="saamc"' + (s.autoAdvMC ? " checked" : "") + '> Also move on after a correct multiple-choice answer (skips the explanations)</label><label><input type="checkbox" id="sacc"' + (s.showAcc !== false ? " checked" : "") + '> Show my accuracy before and during practice and study</label></div>'
 }
 function appearanceWire(el) {
     wireThemes(el); $("#fxm", el).onchange = function () { S().fx = this.value; applyFx(); save(); if (this.value === "full" || this.value === "auto") fxBurst(this, false) };
     $("#snd", el).onchange = function () { S().sound = this.checked; save(); if (this.checked) sfx("ok") };
-    $("#sacc", el).onchange = function () { S().showAcc = this.checked; save() }
+    $("#sacc", el).onchange = function () { S().showAcc = this.checked; save() };
+    $("#saa", el).onchange = function () { S().autoAdv = this.checked; save() }; $("#saamc", el).onchange = function () { S().autoAdvMC = this.checked; save() }
 }

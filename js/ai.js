@@ -300,12 +300,12 @@ function aiControls() {
     '<label for="aiS">Question style</label><select id="aiS">' + Object.keys(AI_STYLES).map(function (k) { return '<option value="' + k + '"' + ((imp.aiS || "mc") === k ? " selected" : "") + '>' + AI_STYLES[k].label + '</option>' }).join("") + '</select><p class="hint" style="margin:4px 0 0">Multiple choice is graded for the student; short answers are checked automatically. Both are quicker to answer than a paragraph.</p>' +
     '<label for="aiG">Level or focus (optional)</label><input type="text" id="aiG" placeholder="e.g. 9th grade biology; stress how the two stages connect" value="' + esc(imp.aiG || "") + '">' +
     '<div class="row"><button class="primary" id="aib" type="button">' + (has ? "Write a new set" : "Write questions with AI") + '</button><button id="aix" type="button" hidden>Stop</button></div>' +
-    progHTML("aiprog", "") + '<p class="hint" id="aim" role="status">' + esc(imp.aiMsg || "") + '</p>' + aiCovHTML()
+    progHTML("aiprog", "") + (aiProvider() === "puter" ? puterMiniHTML() : "") + '<p class="hint" id="aim" role="status">' + esc(imp.aiMsg || "") + '</p>' + aiCovHTML()
 }
 function aiWire(v) {
   var c = $("#aic"); if (c) c.onclick = function () { tab = "set"; render() };
   var b = $("#aib"); if (!b) return;
-  if (aiProvider() === "puter") aiLoadPuter().catch(function () { });
+  if (aiProvider() === "puter") { aiLoadPuter().catch(function () { }); paintPuterMini(); puterUsage(false).then(paintPuterMini) }
   function rep(label, pct, busy) { imp.aiLabel = label; if (pct !== undefined) imp.aiPct = pct; progSet("aiprog", imp.aiPct, label, busy) }
   if (imp.aiRunning) { b.disabled = true; $("#aix").hidden = false; progSet("aiprog", imp.aiPct, imp.aiLabel, true) }
   $("#aiN").onchange = function () { imp.aiN = this.value; $("#aiplan").innerHTML = aiPlanText(aiPlanNow()) };
@@ -328,7 +328,7 @@ function aiWire(v) {
       imp.ai = fill ? aiBlendCards((imp.ai || []).concat(cards)) : cards; imp.method = "ai"; imp.aiCov = aiCoverage(aiSources(), imp.ai); rebuild();
       var msg = (imp.aiCancel ? "Stopped. Kept " : "Wrote ") + cards.length + (fill ? " more" : "") + " questions" + (fill ? "" : " (" + imp.ai.length + " in total)") + ". Review them below.";
       progDone("aiprog", msg); imp.aiMsg = o.warning ? "Some requests failed (" + o.warning + "), so you may have fewer questions than planned." : "";
-      importView(v); progDone("aiprog", msg);
+      importView(v); progDone("aiprog", msg); puterUsageAfterRun();
       var s3 = $("#istep3"); if (s3 && s3.scrollIntoView) s3.scrollIntoView({ behavior: "smooth", block: "start" })
     } catch (e) {
       stopTimer(); imp.aiRunning = false; progHide("aiprog"); m.className = "hint fl-err"; m.textContent = e.message || "Something went wrong."; imp.aiMsg = m.textContent; b.disabled = false; if (fb) fb.disabled = false; $("#aix").hidden = true
@@ -341,7 +341,7 @@ function aiWire(v) {
 function aiSettings(el) {
   var s = S(), p = aiProvider(), P = AI_PROV[p];
   if (p === "puter") aiLoadPuter().catch(function () { });
-  var fields = p === "puter" ? '<div class="row"><button id="pSign" type="button">Sign in to Puter</button></div><label for="puterModel">Model (optional)</label><input type="text" id="puterModel" autocomplete="off" spellcheck="false" value="' + esc(s.puterModel || "") + '" placeholder="Leave empty to use Puter\'s default"><p class="hint" style="margin:4px 0 0">There is no key to paste. Sign in once here, or wait for the sign-in window the first time you write questions.</p>' :
+  var fields = p === "puter" ? '<div class="row"><button id="pSign" type="button">Sign in to Puter</button></div><label for="puterModel">Model (optional)</label><input type="text" id="puterModel" autocomplete="off" spellcheck="false" value="' + esc(s.puterModel || "") + '" placeholder="Leave empty to use Puter\'s default"><p class="hint" style="margin:4px 0 0">There is no key to paste. Sign in once here, or wait for the sign-in window the first time you write questions.</p>' + puterUsageHTML() :
     p === "chrome" ? '<div class="row"><button id="aiChk" type="button">Check this device</button></div>' :
       p === "gemini" ? '<label for="gemKey">Gemini API key</label><input type="password" id="gemKey" autocomplete="off" spellcheck="false" value="' + esc(s.gemKey || "") + '" placeholder="Paste your key"><p class="hint" style="margin:4px 0 0"><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Get a free key in Google AI Studio</a>. Don\'t enter it on a shared computer.</p>' +
         '<label for="gemModel">Model</label><input type="text" id="gemModel" list="gemList" autocomplete="off" spellcheck="false" value="' + esc(s.gemModel || "") + '"><datalist id="gemList">' + AI_GEM_LIST.map(function (m) { return '<option value="' + esc(m) + '">' }).join("") + '</datalist><div class="row"><button id="gemTest" type="button">Test key and list models</button></div>' :
@@ -349,6 +349,7 @@ function aiSettings(el) {
         '<label for="aiModel">Model</label><input type="text" id="aiModel" autocomplete="off" spellcheck="false" value="' + esc(s.aiModel || "") + '"><p class="hint" style="margin:4px 0 0">Leave as is unless the service reports an unknown model.</p>';
   el.innerHTML = '<label for="aiProv">AI provider</label><select id="aiProv">' + Object.keys(AI_PROV).map(function (k) { return '<option value="' + k + '"' + (k === p ? " selected" : "") + '>' + esc(AI_PROV[k].name) + '</option>' }).join("") + '</select>' +
     '<div class="ainote">' + P.notes.map(function (n) { return '<div><b>' + n[0] + ':</b> ' + esc(n[1]) + '</div>' }).join("") + '</div>' + fields + progHTML("setprog", "") + '<p class="hint" id="aiMsgS" role="status"></p>';
+  if (p === "puter") puterUsageInit();
   function msg(t) { $("#aiMsgS").textContent = t }
   function work(t, pct) { progSet("setprog", pct == null ? null : pct, t, pct == null) }
   $("#aiProv").onchange = function () { s.aiProvider = this.value; save(); aiSettings(el) };
@@ -358,7 +359,7 @@ function aiSettings(el) {
     msg(""); work("Opening Puter\u2026");
     try {
       var p = await aiLoadPuter(); if (!(await p.auth.isSignedIn())) { work("Waiting for you to sign in in the Puter window\u2026"); await p.auth.signIn() }
-      var u = await p.auth.getUser(); progDone("setprog", "Signed in"); msg("Signed in" + (u && u.username ? " as " + u.username : "") + ". You're ready to write questions.")
+      var u = await p.auth.getUser(); progDone("setprog", "Signed in"); puterUsage(true).then(function () { paintPuterUsage(); paintPuterMini() }); msg("Signed in" + (u && u.username ? " as " + u.username : "") + ". You're ready to write questions.")
     } catch (e) { progHide("setprog"); msg(aiErr(e, "The sign-in didn't finish.") + " If no window opened, allow pop-ups for this page and click again.") }
   };
   if ($("#aiChk")) $("#aiChk").onclick = async function () {

@@ -269,3 +269,28 @@ dialog.cbox.wide { width: min(560px, calc(100vw - 32px)) }
 .cbody b { color: var(--ink) }
 dialog.cbox .opts { margin-top: 10px }
 ol.steps { margin: 8px 0; padding-left: 22px; line-height: 1.55 }
+
+/* Auto-advance toggle and "I already know this" */
+label.aa { display: flex; align-items: center; gap: .5em; margin: 10px 0 0; font-size: 14px; font-weight: 400; color: var(--mute) }
+
+/* Puter usage */
+.pusage { margin: 14px 0 6px; padding: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px }
+.pu-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px }
+.pu-head h3 { margin: 0; font-size: 16px }
+.pu-actions { display: inline-flex; align-items: center; gap: 12px }
+.pubar { height: 10px; margin: 6px 0 10px }
+.pu-line { margin: 6px 0 }
+.pu-table td:first-child { white-space: normal; overflow-wrap: anywhere }
+.pumini { margin: 8px 0 0 }
+.pumini a, .pusage a { color: var(--acc) }
+
+/* Puter usage */
+.pusage { margin: 14px 0 6px; padding: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px }
+.pu-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px }
+.pu-head h3 { margin: 0; font-size: 16px }
+.pu-actions { display: inline-flex; align-items: center; gap: 12px }
+.pubar { height: 10px; margin: 6px 0 10px }
+.pu-line { margin: 6px 0 }
+.pu-table td:first-child { white-space: normal; overflow-wrap: anywhere }
+.pumini { margin: 8px 0 0 }
+.pumini a, .pusage a { color: var(--acc) }

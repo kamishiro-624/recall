@@ -99,7 +99,7 @@ function vocabView(v) {
         '<label for="vfmt">Card format</label><select id="vfmt">' + VOC_FMT.map(function (f) { return '<option value="' + f[0] + '"' + (st.fmt === f[0] ? " selected" : "") + '>' + f[1] + '</option>' }).join("") + '</select><p class="hint" id="vfmtn" style="margin:4px 0 0">' + fm[2] + '</p>' +
         '<div class="opts"><label><input type="checkbox" id="vex"' + (st.ex ? " checked" : "") + '> Show the example sentence on the back of the card</label></div>' +
         '<p class="hint">AI provider: ' + esc(P.short.replace("The slide text", "Your list of terms")) + '. <button class="sm" id="vchg" type="button">Change in Settings</button></p>' +
-        '<div class="row"><button class="primary" id="vgo" type="button">' + ((imp.vocab || []).length ? "Write a new set" : "Write the cards") + '</button><button id="vstop" type="button" hidden>Stop</button></div>' + progHTML("vprog", "") +
+        '<div class="row"><button class="primary" id="vgo" type="button">' + ((imp.vocab || []).length ? "Write a new set" : "Write the cards") + '</button><button id="vstop" type="button" hidden>Stop</button></div>' + progHTML("vprog", "") + (aiProvider() === "puter" ? puterMiniHTML() : "") +
         '<p class="hint" id="vmsg" role="status">' + esc(st.msg) + '</p><div id="vmiss"></div></div><div id="istep3"></div>';
     function missing() {
         var m = $("#vmiss"); if (!m) return;
@@ -128,12 +128,12 @@ function vocabView(v) {
             if (!b.cards.length) { progHide("vprog"); msg.className = "hint fl-err"; msg.textContent = imp.vocCancel ? "Stopped before any cards were written." : "The AI didn't return usable definitions. Try again."; goB.disabled = false; stopB.hidden = true; return }
             imp.vocab = retry ? (imp.vocab || []).concat(b.cards) : b.cards; st.missing = b.missing; if (!imp.deck) imp.deck = "Vocabulary"; rebuild();
             progDone("vprog", (imp.vocCancel ? "Stopped. Kept " : retry ? "Added " : "Wrote ") + b.cards.length + (retry ? " more " : " ") + (b.cards.length === 1 ? "card" : "cards") + ". Review them below."); st.msg = o.warning ? "Some requests failed (" + o.warning + "), so some terms are missing." : "";
-            msg.textContent = st.msg; msg.className = o.warning ? "hint fl-err" : "hint"; goB.disabled = false; goB.textContent = "Write a new set"; stopB.hidden = true; missing(); step3(v);
+            msg.textContent = st.msg; msg.className = o.warning ? "hint fl-err" : "hint"; goB.disabled = false; goB.textContent = "Write a new set"; stopB.hidden = true; missing(); step3(v); puterUsageAfterRun();
             var s3 = $("#istep3"); if (s3 && s3.scrollIntoView) s3.scrollIntoView({ behavior: "smooth", block: "start" })
         } catch (e) { stopT(); imp.vocRunning = false; progHide("vprog"); msg.className = "hint fl-err"; msg.textContent = e.message || "Something went wrong."; st.msg = msg.textContent; goB.disabled = false; stopB.hidden = true }
     }
     goB.onclick = function () { run() };
     if (imp.vocRunning) { goB.disabled = true; stopB.hidden = false; progSet("vprog", imp.vocPct, "Working\u2026", true) }
-    if (aiProvider() === "puter") aiLoadPuter().catch(function () { });
+    if (aiProvider() === "puter") { aiLoadPuter().catch(function () { }); paintPuterMini(); puterUsage(false).then(paintPuterMini) }
     wireSeg(v); vocCount(); missing(); step3(v)
 }

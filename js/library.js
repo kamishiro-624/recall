@@ -27,7 +27,9 @@ function libPaint() {
     box.querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { var c = DB.cards.find(function (x) { return x.id === b.dataset.del }); libDelete([c.id], 'Delete this card?', '"' + (c.q || "(picture or audio)").replace(/\n/g, " ").slice(0, 90) + '" and its study progress will be deleted. This can\'t be undone.') } })
 }
 function libExplainable() { return DB.cards.filter(function (c) { return LIB.sel[c.id] && aiNeedsExplain(c) }) }
-function libExplainBtn() { var n = libExplainable().length, b = $("#lexp"); if (b) { b.disabled = !n; b.textContent = n ? "Add choice explanations (" + n + ")" : "Add choice explanations" } }
+function libKnowable() { return DB.cards.filter(function (c) { return LIB.sel[c.id] && (c.stage === "new" || c.stage === "learning") }) }
+function libKnowBtn() { var n = libKnowable().length, b = $("#lknow"); if (b) { b.disabled = !n; b.textContent = n ? "I know these (" + n + ")" : "I know these" } }
+function libExplainBtn() { libKnowBtn(); var n = libExplainable().length, b = $("#lexp"); if (b) { b.disabled = !n; b.textContent = n ? "Add choice explanations (" + n + ")" : "Add choice explanations" } }
 function libPaintCounts() {
     var list = libFiltered(), n = Object.keys(LIB.sel).filter(function (k) { return LIB.sel[k] && DB.cards.some(function (c) { return c.id === k }) }).length;
     $("#lselct").textContent = n ? n + " selected" : "None selected"; var d = $("#ldel"); d.disabled = !n; d.textContent = n ? "Delete " + n + " selected" : "Delete selected"; libExplainBtn();
@@ -46,13 +48,18 @@ function libView(v) {
         '<div class="toolbar"><input type="search" id="sq" placeholder="Search cards" aria-label="Search cards" value="' + esc(LIB.q) + '">' +
         '<select id="lft" aria-label="Card type">' + [["all", "All types"], ["choice", "Multiple choice"], ["text", "Text"], ["fill-in", "Fill-in"], ["image", "Image"], ["audio", "Audio"]].map(function (t) { return '<option value="' + t[0] + '"' + (LIB.ft === t[0] ? " selected" : "") + '>' + t[1] + '</option>' }).join("") + '</select>' +
         '<select id="lfs" aria-label="Learning stage">' + [["all", "All stages"], ["new", "New"], ["learning", "Learning"], ["reviewing", "Reviewing"], ["mastered", "Mastered"]].map(function (t) { return '<option value="' + t[0] + '"' + (LIB.fs === t[0] ? " selected" : "") + '>' + t[1] + '</option>' }).join("") + '</select></div>' +
-        '<div class="bulkbar"><label class="inl"><input type="checkbox" id="lall"> Select all shown</label><span class="hint" id="lselct"></span><span class="grow"></span><button class="sm" id="lclr" type="button">Clear selection</button><button class="sm" id="lexp" type="button" disabled>Add choice explanations</button><button class="sm danger" id="ldel" type="button" disabled>Delete selected</button></div>' + progHTML("libprog", "") + '<p class="hint fl-err" id="libmsg" role="status"></p>' +
+        '<div class="bulkbar"><label class="inl"><input type="checkbox" id="lall"> Select all shown</label><span class="hint" id="lselct"></span><span class="grow"></span><button class="sm" id="lclr" type="button">Clear selection</button><button class="sm" id="lknow" type="button" disabled>I know these</button><button class="sm" id="lexp" type="button" disabled>Add choice explanations</button><button class="sm danger" id="ldel" type="button" disabled>Delete selected</button></div>' + progHTML("libprog", "") + '<p class="hint fl-err" id="libmsg" role="status"></p>' +
         '<div id="liblist"></div>' + (DB.cur !== "all" ? '<div class="row"><button class="sm danger" id="dd" type="button">Delete this deck and its cards</button></div>' : "") + '</div>';
     libPaint();
     $("#sq").oninput = function () { LIB.q = this.value; libPrune(); libPaint() };
     $("#lft").onchange = function () { LIB.ft = this.value; libPrune(); libPaint() }; $("#lfs").onchange = function () { LIB.fs = this.value; libPrune(); libPaint() };
     $("#lall").onchange = function () { var on = this.checked; libFiltered().forEach(function (c) { if (on) LIB.sel[c.id] = true; else delete LIB.sel[c.id] }); libPaint() };
     $("#lclr").onclick = function () { LIB.sel = {}; libPaint() };
+    $("#lknow").onclick = async function () {
+        var cs = libKnowable(); if (!cs.length) return;
+        if (!(await askConfirm({ title: "Mark " + cs.length + " card" + (cs.length === 1 ? "" : "s") + " as already known?", body: "They skip learning and start at level 3, so their first review is a few days away. Cards in a cram deck also shrink that deck's plan.", ok: "Mark as known" }))) return;
+        cs.forEach(knowCard); LIB.sel = {}; save(); render(); toast(cs.length + " card" + (cs.length === 1 ? "" : "s") + " marked as known.")
+    };
     $("#lexp").onclick = async function () {
         var cs = libExplainable(); if (!cs.length) return; var P = AI_PROV[aiProvider()], btn = this, msg = $("#libmsg"); msg.textContent = "";
         if (!(await askConfirm({ title: "Write explanations for " + cs.length + " card" + (cs.length === 1 ? "" : "s") + "?", body: "Each choice gets a one-sentence reason it is right or wrong, written with " + P.name + ". The questions and choices are not changed.", ok: "Write explanations" }))) return;

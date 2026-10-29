@@ -81,6 +81,37 @@ function statusLine(a, p) {
     if (a.status === "ahead") return ["ok", "You are ahead of a steady plan. The extra time goes to reviewing."];
     return ["ok", "On track. Keep to about " + a.target + " new cards a day."]
 }
+/* "Skip what I already know": mark cards as known up front, so the plan only has to teach the rest */
+function knowHTML(deck) {
+    var cs = DB.cards.filter(function (c) { return c.deck === deck && (c.stage === "new" || c.stage === "learning") });
+    if (!cs.length) return "";
+    return '<details class="adv" id="kdet" style="margin-top:12px"><summary>Skip what I already know (' + cs.length + ' cards not learned yet)</summary><p class="hint">Tick the cards you already know well. They skip learning and come back for review in a few days (sooner as the deadline gets close), so the plan needs fewer new cards a day.</p>' +
+        '<input type="search" id="ksq" placeholder="Search these cards" aria-label="Search cards"><div class="bulkbar"><label class="inl"><input type="checkbox" id="kall"> Select all shown</label><span class="hint" id="kct"></span><span class="grow"></span><button class="primary sm" id="kgo" type="button" disabled>Mark as known</button></div><div id="klist" class="review"></div></details>'
+}
+function knowWire(deck) {
+    var sel = {}, q = "";
+    function list() { var qq = q.toLowerCase().trim(); return DB.cards.filter(function (c) { return c.deck === deck && (c.stage === "new" || c.stage === "learning") && (!qq || (qText(c) + " " + (c.a || "")).toLowerCase().indexOf(qq) > -1) }).slice(0, 300) }
+    function counts() {
+        var l = list(), n = Object.keys(sel).filter(function (k) { return sel[k] }).length;
+        $("#kct").textContent = n ? n + " selected" : "None selected"; $("#kgo").disabled = !n; $("#kgo").textContent = n ? "Mark " + n + " as known" : "Mark as known";
+        var shown = l.filter(function (c) { return sel[c.id] }).length; $("#kall").checked = l.length > 0 && shown === l.length; $("#kall").indeterminate = shown > 0 && shown < l.length
+    }
+    function paint() {
+        var l = list();
+        $("#klist").innerHTML = l.length ? l.map(function (c) { return '<div class="item"><input type="checkbox" data-k="' + c.id + '" aria-label="I know this card"' + (sel[c.id] ? " checked" : "") + '><div class="body"><div>' + esc(c.q.replace(/\n/g, " ")) + '</div><div class="a">' + esc((c.a || "").replace(/\n/g, " ")) + '</div></div></div>' }).join("") : '<p class="hint">No cards match.</p>';
+        counts();
+        $("#klist").querySelectorAll("[data-k]").forEach(function (b) { b.onchange = function () { if (b.checked) sel[b.dataset.k] = true; else delete sel[b.dataset.k]; counts() } })
+    }
+    $("#kdet").addEventListener("toggle", function () { if (this.open) paint() });
+    $("#ksq").oninput = function () { q = this.value; Object.keys(sel).forEach(function (k) { if (!list().some(function (c) { return c.id === k })) delete sel[k] }); paint() };
+    $("#kall").onchange = function () { var on = this.checked; list().forEach(function (c) { if (on) sel[c.id] = true; else delete sel[c.id] }); paint() };
+    $("#kgo").onclick = async function () {
+        var ids = Object.keys(sel).filter(function (k) { return sel[k] }), p = DB.plans[deck]; if (!ids.length) return;
+        if (!(await askConfirm({ title: "Mark " + ids.length + " card" + (ids.length === 1 ? "" : "s") + " as already known?", body: "They skip learning and start at level 3, so their first review is a few days away (sooner as the deadline gets close). The plan is recalculated for the cards that are left.", ok: "Mark as known" }))) return;
+        var before = cramAnalyze(deck, p).target; DB.cards.forEach(function (c) { if (sel[c.id]) knowCard(c) }); save();
+        var after = cramAnalyze(deck, p); toast(ids.length + " card" + (ids.length === 1 ? "" : "s") + " marked as known. The plan now needs " + after.target + " new cards a day" + (before !== after.target ? " (was " + before + ")" : "") + "."); render()
+    }
+}
 function cramView(v) {
     if (!DB.decks.length) { v.innerHTML = emptyPanel(); wire(v); return }
     cramRefresh(); var deck = cramDeck(), p = (DB.plans || {})[deck], live = p && p.on, ended = live && p.due <= Date.now(), a = live && !ended ? cramAnalyze(deck, p) : null;
@@ -101,7 +132,7 @@ function cramView(v) {
             '<h3>Day by day</h3><div class="plan-wrap"><table class="plan"><thead><tr><th>Day</th><th>Learn</th><th>Review</th><th>Time</th></tr></thead><tbody>' +
             a.rows.slice(0, 21).map(function (r, i) { return '<tr' + (i === 0 ? ' class="now"' : "") + (p.mins && r.min > p.mins ? ' class="over"' : "") + '><td>' + dayLabel(r.date, i, r.last) + '</td><td>' + (r.newN ? r.newN + " new" : "\u2013") + '</td><td>' + (r.reviews ? "~" + r.reviews : "\u2013") + '</td><td>~' + r.min + ' min</td></tr>' }).join("") + '</tbody></table></div>' +
             (a.rows.length > 21 ? '<p class="hint">Showing the first 21 of ' + a.rows.length + ' days.</p>' : "") +
-            '<p class="hint">Review counts assume you answer correctly; missed cards come back sooner and add a little time. Review gaps shrink toward the deadline, and a final review lands about five hours before it.</p></div>'
+            '<p class="hint">Review counts assume you answer correctly; missed cards come back sooner and add a little time. Review gaps shrink toward the deadline, and a final review lands about five hours before it.</p>' + knowHTML(deck) + '</div>'
     }
     v.innerHTML = h;
     $("#cdeck").onchange = function () { CRAM.deck = this.value; CRAM.msg = ""; render() };
@@ -117,5 +148,6 @@ function cramView(v) {
         if (!(await askConfirm({ title: "Remove the cram plan for \u201c" + deckName(deck) + "\u201d?", body: "New cards and reviews for this deck go back to your normal daily limits. Your cards and progress are kept.", ok: "Remove plan", danger: true }))) return;
         DB.plans[deck] = { on: false, due: DB.plans[deck].due, u: Date.now() }; save(); render()
     };
-    if ($("#cgo")) $("#cgo").onclick = function () { DB.cur = deck; save(); startStudy() }
+    if ($("#cgo")) $("#cgo").onclick = function () { DB.cur = deck; save(); startStudy() };
+    if ($("#kdet")) knowWire(deck)
 }
