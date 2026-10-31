@@ -294,3 +294,9 @@ label.aa { display: flex; align-items: center; gap: .5em; margin: 10px 0 0; font
 .pu-table td:first-child { white-space: normal; overflow-wrap: anywhere }
 .pumini { margin: 8px 0 0 }
 .pumini a, .pusage a { color: var(--acc) }
+
+/* Editing a card from inside a lesson, review or practice round (js/cardedit.js) */
+.meta .ed-card { margin-left: 10px; vertical-align: middle }
+dialog.edit-dlg { width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto }
+dialog.edit-dlg textarea { min-height: 84px }
+dialog.edit-dlg .cbtns { justify-content: flex-end; margin-top: 18px }

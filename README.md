@@ -11,6 +11,8 @@ Built for the TSA Software Development event. Everything runs in the browser. Th
 - **Import in three steps.** Add your material and see exactly what was read (slides, notes, pictures); choose ONE way to make cards (AI-written questions or automatic cards); then review with search and filters before adding. Progress bars show every slow step: reading files, writing questions with AI, downloading the on-device model and signing in.
 - **Accounts and saving online (optional).** Cards always save on the device. Signing in (with a free Puter account, in a pop-up) also saves decks, cards, progress and settings to the person's own Puter storage, so they can open them on any computer. Changes from several devices are merged, and deletions carry over. API keys are never saved online. Use *Sign out and remove my cards from this device* on shared computers.
 - **AI questions blended across lessons.** With several files loaded, each lesson gets its own share of questions (Automatic scales with how much content there is), the lessons are interleaved, and extra questions connect them. A coverage check lists slides that no question refers to and can write questions for them.
+- **Edit a card while you study.** Every card in a lesson, review or practice round has an *Edit card* button. It opens an editor on top of the session (wording, answer, multiple-choice options and explanations, picture and audio), so you can fix a mistake without losing your place. Saving changes the card only: its level and review date stay as they were.
+- **Themed drop-down menus.** Every drop-down is a custom menu that follows the selected theme instead of the browser's native list. It works with the keyboard (arrows, Home, End, typing, Enter, Escape), screen readers and touch, and the real `<select>` stays in the page so nothing else needs to change.
 - **Ten themes and celebrations.** Match-my-device, Light, Dark, Matte black, Ocean, Violet, Rose, Paper, Sage and High contrast, from the *Theme* menu or Settings (remembered, and synced with an account). Correct answers get a pop and a burst, streaks show a counter, learning a card and finishing a session are celebrated with confetti and counting numbers, and optional sound effects can be switched on. Settings > Animations sets full, calm or off, and follows the device's reduced-motion setting by default.
 - **Customizable home screen.** Today, progress by stage, streak, daily goal, review forecast, activity map, decks, trouble spots and a personal note. In *Customize*, drag sections (or use the arrows), give each a size (small, medium, large, full), hide or add them back, set options such as forecast length, or start from a ready-made layout. Rows always fill the width, so there are no gaps, and it collapses to one column on phones.
 - **Auto-advance.** When a typed answer to a short-answer or fill-in card is basically exact (the same words, ignoring capitals, punctuation and a/an/the, or one small typo), Recall counts it as *Got it* and moves straight to the next card, saying what was right. It can be switched off on the card or in Settings; an optional second setting also moves on after a correct multiple-choice answer.
@@ -55,7 +57,7 @@ An internet connection is needed once per load for the JSZip library and Google 
 ```
 index.html            page shell, loads the scripts in order
 css/styles.css        theme tokens (light and dark) and layout
-css/forms.css         styling for inputs, drop-downs, text areas, file pickers and checkboxes
+css/forms.css         styling for inputs, custom drop-down menus, text areas, file pickers and checkboxes
 js/core.js            state, helpers, IndexedDB storage, card model, duplicate keys
 js/download.js        file saving (browser download, or Claude artifact downloads)
 js/shell.js           deck selector, tabs, router
@@ -76,6 +78,8 @@ js/ai.js              optional AI question writing: Puter, Chrome built-in, Gemi
 js/import-view.js     import screen and the review-before-add list
 js/library.js         library with search, filters, bulk delete and all exports
 js/ui.js              confirmation dialog
+js/dropdown.js        custom themed drop-down menus that replace native <select> lists
+js/cardedit.js        edit-card dialog used from lessons, reviews and practice
 js/theme.js           theme menu, theme picker and effects settings
 js/fx.js              bursts, confetti, count-up numbers and sound effects
 css/themes.css        the extra themes
